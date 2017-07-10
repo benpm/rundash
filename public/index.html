@@ -1,0 +1,33 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>superspeedrun</title>
+	<link rel="stylesheet" href="style/index.css">
+</head>
+
+
+<body>
+	<!-- Supports all browsers (even IE). Does not require canvas or WebGL -->
+	<p style="color:#7A9E9F" id="i"></p>
+	
+	<div id="game">
+		<!-- Audio -->
+		<audio id="jump" src="audio/jump.mp3" type="audio/mp3" preload="auto"></audio>
+		<audio id="land" src="audio/land.mp3" type="audio/mp3" preload="auto"></audio>
+		<audio id="die" src="audio/die.mp3" type="audio/mp3" preload="auto"></audio>
+		<audio id="win" src="audio/win.mp3" type="audio/mp3" preload="auto"></audio>
+		<audio id="bigwin" src="audio/bigwin.mp3" type="audio/mp3" preload="auto"></audio>
+
+		<div class="grave" style="top:6pc;left:1.5pc;">>>></div>
+
+		<!-- Scripts -->
+		<script src="js/polyfill.min.js"></script>
+		<script src="js/jquery.min.js"></script>
+		<script src="js/sprintf.min.js"></script>
+		<script src="js/index.js"></script>
+	</div>
+</body>
+
+</html>
