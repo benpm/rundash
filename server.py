@@ -19,8 +19,7 @@ def send(recipient, msgtype, data):
 
 # Setup server app
 app = flask.Flask(__name__, static_url_path="/public")
-app.config["SECRET_KEY"] = "..."
-app.config["SERVER_NAME"] = "127.0.0.1:8080"
+app.config["SERVER_NAME"] = "0.0.0.0:8080"
 
 # Setup websocket app
 players = {}
@@ -56,13 +55,13 @@ def sendfile(path):
 
 # Websocket functionality
 @sock.on("msg")
-def recieve(msg):
+def recieve(message):
 	"Recieve a message from a client"
 	player = players[flask.request.sid]
-	data = unpack(msg)
+	data = unpack(message)
 	info = data[1]
 	if data[0] == msg.pos:
-		player.update(info.x, info.y)
+		player.update(info[b"x"], info[b"y"])
 	elif info == msg.login:
 		pass # todo: login using GameJolt API
 

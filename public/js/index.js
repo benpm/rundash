@@ -180,9 +180,15 @@ const msg = {
 	login: 5,
 	init: 6
 };
+var ticks = 0;
 
 function decode(msg) {
 	return msgpack.decode(new Uint8Array(msg.data));
+}
+
+function send(msgtype, msg) {
+	if (sock.connected)
+		sock.emit("msg", msgpack.encode([msgtype, msg]));
 }
 
 sock.on("connect", function () {
@@ -456,15 +462,17 @@ cam.reset();
 
 function gameloop(time) {
 	window.requestAnimationFrame(gameloop);
+	ticks++;
 	if (input.right()) player.vx += 0.25;
 	if (input.left()) player.vx -= 0.25;
 	if (stage) stage.update();
 	cam.update();
+	if (ticks % 20 == 0) send(msg.pos, {x: player.x, y: player.y});
 	keyboard.keyspressed.forEach(function (v, i, a) {
 		a[i] = 0;
 	});
 	stage.timer++;
-	$("#i").text(sp("Time: %.1f", stage.timer / 60));
+	$("#i").html(sp("Time: %.1f<br>%s", stage.timer / 60, sock.connected ? "connected" : "not connected"));
 	touch.right = false;
 	touch.left = false;
 }
