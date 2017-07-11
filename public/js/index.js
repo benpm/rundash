@@ -163,12 +163,41 @@ $(document).on("touchend", function (event) {
 $(document).on("touchmove", function (event) {
 	console.log("move");
 });
+
+const address = "http://" + document.domain + ":" + location.port;
+const sock = io.connect(address);
 const sp = sprintf;
 const body = $("#game");
 const BOTTOM = 1;
 const TOP = 2;
 const LEFT = 4;
 const RIGHT = 8;
+const msg = {
+	join:1,
+	leave:2,
+	game:3
+};
+
+function decode(msg) {
+	return msgpack.decode(new Uint8Array(msg.data));
+}
+
+sock.on("connect", function () {
+	console.log(sp("connected to %s", sock.io.uri));
+});
+
+sock.on("msg", function (msg) {
+	var data = decode(msg);
+	var info = data[1];
+	switch(data[0]) {
+		case msg.join:
+			actor("friend", 4, 4, 3, 3);
+			break;
+		case msg.leave:
+			stage.actors.splice(stage.actors.length, 1);
+			break;
+	}
+});
 
 function lerp(v0, v1, t) {
 	return (1 - t) * v0 + t * v1;

@@ -33,6 +33,7 @@ body {
 .spike {
 	position: absolute;
 	background: url("../img/spike.svg");
+	background-repeat: repeat-x;
 }
 
 .friend, .player {
