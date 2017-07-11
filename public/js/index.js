@@ -173,9 +173,12 @@ const TOP = 2;
 const LEFT = 4;
 const RIGHT = 8;
 const msg = {
-	join:1,
-	leave:2,
-	game:3
+	join: 1,
+	leave: 2,
+	game: 3,
+	pos: 4,
+	login: 5,
+	init: 6
 };
 
 function decode(msg) {
@@ -189,12 +192,18 @@ sock.on("connect", function () {
 sock.on("msg", function (msg) {
 	var data = decode(msg);
 	var info = data[1];
-	switch(data[0]) {
+	switch (data[0]) {
+		case msg.init:
+			console.log("initial");
+			player.sid = info.sid;
+			break;
 		case msg.join:
-			actor("friend", 4, 4, 3, 3);
+			console.log("player joined");
+			//actor("friend", 4, 4, 3, 3);
 			break;
 		case msg.leave:
-			stage.actors.splice(stage.actors.length, 1);
+			console.log("player left");
+			//stage.actors.splice(stage.actors.length, 1);
 			break;
 	}
 });
@@ -280,6 +289,7 @@ function actor(type, x, y, w, h, face) {
 		h: h,
 		vx: 0,
 		vy: 0,
+		sid: "",
 		move: function (dx, dy) {
 			this.x += dx;
 			this.y += dy;
