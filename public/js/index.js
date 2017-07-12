@@ -205,7 +205,7 @@ sock.on("msg", function (msg) {
 			break;
 		case msg.join:
 			console.log("player joined");
-			//actor("friend", 4, 4, 3, 3);
+			//new Actor("friend", 4, 4, 3, 3);
 			break;
 		case msg.leave:
 			console.log("player left");
@@ -227,6 +227,18 @@ var stage = {
 			this.actors[i].update();
 		}
 	},
+	addprop: function (prop) {
+		this.props.push(self);
+		if (this.props.length > this.maxprops) {
+			this.props.find(function (prop, i) {
+				if (prop.type == "grave") {
+					prop.delete();
+					this.props.splice(i, 1);
+					return true;
+				} else return false;
+			});
+		}
+	},
 	timer: 0
 };
 
@@ -238,117 +250,104 @@ const audio = (function () {
 	return self;
 })();
 
-function prop(type, x, y, w, h, text) {
-	x = x || 0;
-	y = y || 0;
-	w = w || 2;
-	h = h || 2;
+//Constructor Objects
+function Prop(type, x, y, w, h, text) {
+	//Properties
+	this.type = type;
+	this.x = x || 0;
+	this.y = y || 0;
+	this.w = w || 2;
+	this.h = h || 2;
+	this.solid = type == "grave" ? false : true;
+
+	//Initialize
 	var dom = $("<div>", {
 		class: type,
-		style: sp("left:%dpc;top:%dpc;width:%dpc;height:%dpc;", x, y, w, h),
+		style: sp("left:%dpc;top:%dpc;width:%dpc;height:%dpc;",
+			this.x, this.y, this.w, this.h),
 		text: text || ""
 	});
 	body.append(dom);
-	var self = {
-		type: type,
-		x: x,
-		y: y,
-		w: w,
-		h: h,
-		solid: type == "grave" ? false : true,
-		delete: function () {
-			dom.remove();
-		}
+	stage.addprop(this);
+
+	//Methods
+	this.delete = function () {
+		dom.remove();
 	};
-	stage.props.push(self);
-	if (stage.props.length > stage.maxprops) {
-		stage.props.find(function (prop, i) {
-			if (prop.type == "grave") {
-				prop.delete();
-				stage.props.splice(i, 1);
-				return true;
-			} else return false;
-		});
-	}
-	return self;
 }
 
-function actor(type, x, y, w, h, face) {
-	x = x || 0;
-	y = y || 0;
-	w = w || 2;
-	h = h || 2;
-	face = face || ":|";
+function Actor(type, x, y, w, h, face, sid) {
+	//Properties
+	this.x = x || 0;
+	this.y = y || 0;
+	this.w = w || 2;
+	this.h = h || 2;
+	this.vx = 0;
+	this.vy = 0;
+	this.sid = sid || "";
+	this.face = face || ":|";
+
+	//Initialize
 	var dom = $("<div>", {
 		class: type,
 		style: sp("left:%dpc;top:%dpc;width:%dpc;height:%dpc;", x, y, w, h),
 		text: face
 	});
 	body.append(dom);
-	var self = {
-		type: type,
-		face: face,
-		canjump: false,
-		x: x,
-		y: y,
-		w: w,
-		h: h,
-		vx: 0,
-		vy: 0,
-		sid: "",
-		move: function (dx, dy) {
-			this.x += dx;
-			this.y += dy;
-			dom.css("left", this.x + "pc");
-			dom.css("top", this.y + "pc");
-			dom.css(
-				"transform",
-				sp(
-					"scale(%f, %f) rotate(%fdeg)",
-					1 + Math.abs(this.vx / 3),
-					1 + Math.abs(this.vy / 3),
-					90 + this.vx * 15
-				)
-			);
-		},
-		update: function () {
-			if (this.y > 256) this.die();
-			if (this.type == "player" && this.canjump && input.jump()) {
-				player.vy = -0.72;
-				audio.jump.play();
-				this.canjump = false;
-			}
-			this.move(this.vx, this.vy);
-			this.vy += 0.04;
-			this.vx /= 2;
-			var spd = this.vy;
-			var coll = collision(this);
-			if (spd > 0.1 && this.vy === 0 && coll & BOTTOM) {
-				audio.land.play();
-			}
-			if (coll & BOTTOM) {
-				this.canjump = true;
-			}
-		},
-		die: function () {
-			prop("grave", this.x - this.vx, this.y - this.vy, 4, 3, ":(");
-			this.vx = this.vy = 0;
-			this.x = 2;
-			this.y = 6;
-			this.move(0, 0);
-			stage.timer = 0;
-			audio.die.play();
-		},
-		win: function () {
-			this.vx = this.vy = 0;
-			this.x = 2;
-			this.y = 6;
-			this.move(0, 0);
-			stage.timer = 0;
-			audio.win.play();
+	stage.actors.push(self);
+
+	//Methods
+	this.move = function (dx, dy) {
+		this.x += dx;
+		this.y += dy;
+		dom.css("left", this.x + "pc");
+		dom.css("top", this.y + "pc");
+		dom.css(
+			"transform",
+			sp(
+				"scale(%f, %f) rotate(%fdeg)",
+				1 + Math.abs(this.vx / 3),
+				1 + Math.abs(this.vy / 3),
+				90 + this.vx * 15
+			)
+		);
+	};
+	this.update = function () {
+		if (this.y > 256) this.die();
+		if (this.type == "player" && this.canjump && input.jump()) {
+			player.vy = -0.72;
+			audio.jump.play();
+			this.canjump = false;
+		}
+		this.move(this.vx, this.vy);
+		this.vy += 0.04;
+		this.vx /= 2;
+		var spd = this.vy;
+		var coll = collision(this);
+		if (spd > 0.1 && this.vy === 0 && coll & BOTTOM) {
+			audio.land.play();
+		}
+		if (coll & BOTTOM) {
+			this.canjump = true;
 		}
 	};
-	stage.actors.push(self);
+	this.die = function () {
+		new Prop("grave", this.x - this.vx, this.y - this.vy, 4, 3, ":(");
+		this.vx = this.vy = 0;
+		this.x = 2;
+		this.y = 6;
+		this.move(0, 0);
+		stage.timer = 0;
+		audio.die.play();
+	};
+	this.win = function () {
+		this.vx = this.vy = 0;
+		this.x = 2;
+		this.y = 6;
+		this.move(0, 0);
+		stage.timer = 0;
+		audio.win.play();
+	}
 	return self;
 }
 
@@ -449,14 +448,14 @@ var y = 16;
 for (var i = 0; i < 16; i++) {
 	y = Math.round(y + (Math.random() - 0.5) * 8);
 	var w = Math.round(4 + Math.random() * 4) * 2;
-	prop("platform", i * 16, y, w, 2);
-	if (i == 15) prop("platform goal", i * 16 + w + 2, y - 8, 2, 8);
-	if (Math.random() < 0.5 && i > 1) prop("spike", i * 16 + 4, y - 2, Math.round(w / 6) * 2);
+	new Prop("platform", i * 16, y, w, 2);
+	if (i == 15) new Prop("platform goal", i * 16 + w + 2, y - 8, 2, 8);
+	if (Math.random() < 0.5 && i > 1) new Prop("spike", i * 16 + 4, y - 2, Math.round(w / 6) * 2);
 }
-prop("spike", 2, 44, 302, 2);
-prop("platform", 0, 0, 2, 48);
-prop("platform", -2, 46, 302, 2);
-var player = actor("player", 2, 8, 3, 3, ":)");
+new Prop("spike", 2, 44, 302, 2);
+new Prop("platform", 0, 0, 2, 48);
+new Prop("platform", -2, 46, 302, 2);
+var player = new Actor("player", 2, 8, 3, 3, ":)");
 cam.target = player;
 cam.reset();
 
@@ -467,7 +466,10 @@ function gameloop(time) {
 	if (input.left()) player.vx -= 0.25;
 	if (stage) stage.update();
 	cam.update();
-	if (ticks % 20 == 0) send(msg.pos, {x: player.x, y: player.y});
+	if (ticks % 20 == 0) send(msg.pos, {
+		x: player.x,
+		y: player.y
+	});
 	keyboard.keyspressed.forEach(function (v, i, a) {
 		a[i] = 0;
 	});
