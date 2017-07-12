@@ -470,9 +470,7 @@ function gameloop(time) {
 		x: player.x,
 		y: player.y
 	});
-	keyboard.keyspressed.forEach(function (v, i, a) {
-		a[i] = 0;
-	});
+	for (var i = 0; i < 128; keyboard.keyspressed[i] = 0);
 	stage.timer++;
 	$("#i").html(sp("Time: %.1f<br>%s", stage.timer / 60, sock.connected ? "connected" : "not connected"));
 	touch.right = false;
