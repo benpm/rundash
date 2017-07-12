@@ -146,13 +146,13 @@ const input = {
 	}
 };
 $(document).on("touchstart", function (event) {
+	if (touch.righthold || touch.lefthold) {
+		touch.right = true;
+	}
 	var x = event.touches[0].clientX;
 	var y = event.touches[0].clientY;
 	if (y > window.innerWidth / 2) touch.righthold = true;
 	else touch.lefthold = true;
-	if (touch.righthold || touch.lefthold) {
-		touch.right = true;
-	}
 });
 $(document).on("touchend", function (event) {
 	if (event.touches.length == 0) {
