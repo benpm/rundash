@@ -228,7 +228,7 @@ var stage = {
 		}
 	},
 	addprop: function (prop) {
-		this.props.push(self);
+		this.props.push(prop);
 		if (this.props.length > this.maxprops) {
 			this.props.find(function (prop, i) {
 				if (prop.type == "grave") {
@@ -286,6 +286,7 @@ function Actor(type, x, y, w, h, face, sid) {
 	this.vy = 0;
 	this.sid = sid || "";
 	this.face = face || ":|";
+	this.type = type;
 
 	//Initialize
 	var dom = $("<div>", {
@@ -294,7 +295,7 @@ function Actor(type, x, y, w, h, face, sid) {
 		text: face
 	});
 	body.append(dom);
-	stage.actors.push(self);
+	stage.actors.push(this);
 
 	//Methods
 	this.move = function (dx, dy) {
@@ -348,7 +349,6 @@ function Actor(type, x, y, w, h, face, sid) {
 		stage.timer = 0;
 		audio.win.play();
 	}
-	return self;
 }
 
 function collision(actor) {
@@ -470,7 +470,7 @@ function gameloop(time) {
 		x: player.x,
 		y: player.y
 	});
-	for (var i = 0; i < 128; keyboard.keyspressed[i] = 0);
+	for (var i = 0; i < 128; i++, keyboard.keyspressed[i] = 0);
 	stage.timer++;
 	$("#i").html(sp("Time: %.1f<br>%s", stage.timer / 60, sock.connected ? "connected" : "not connected"));
 	touch.right = false;
