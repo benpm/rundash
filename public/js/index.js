@@ -136,7 +136,7 @@ const touch = {
 };
 const input = {
 	jump: function () {
-		return keyboard.pressed("space", "w", "up") || touch.right || touch.left;
+		return keyboard.down("space", "w", "up") || touch.right || touch.left;
 	},
 	right: function () {
 		return keyboard.down("right", "d") || touch.righthold;
@@ -164,10 +164,11 @@ $(document).on("touchmove", function (event) {
 	console.log("move");
 });
 
-const address = "http://" + document.domain + ":" + location.port;
+const address = location.href;
 const sock = io.connect(address);
 const sp = sprintf;
-const body = $("#game");
+const gbody = $("#game");
+const info = $("#i");
 const BOTTOM = 1;
 const TOP = 2;
 const LEFT = 4;
@@ -176,11 +177,29 @@ const msg = {
 	join: 1,
 	leave: 2,
 	game: 3,
-	pos: 4,
+	update: 4,
 	login: 5,
-	init: 6
+	init: 6,
+	endgame: 7
 };
-var ticks = 0;
+
+function cubicHermite(p0, v0, p1, v1, t, f) {
+	var ti = (t - 1), t2 = t * t, ti2 = ti * ti,
+		h00 = (1 + 2 * t) * ti2,
+		h10 = t * ti2,
+		h01 = t2 * (3 - 2 * t),
+		h11 = t2 * ti
+	if (p0.length) {
+		if (!f) {
+			f = new Array(p0.length)
+		}
+		for (var i = p0.length - 1; i >= 0; --i) {
+			f[i] = h00 * p0[i] + h10 * v0[i] + h01 * p1[i] + h11 * v1[i]
+		}
+		return f
+	}
+	return h00 * p0 + h10 * v0 + h01 * p1 + h11 * v1
+}
 
 function decode(msg) {
 	return msgpack.decode(new Uint8Array(msg.data));
@@ -193,162 +212,60 @@ function send(msgtype, msg) {
 
 sock.on("connect", function () {
 	console.log(sp("connected to %s", sock.io.uri));
+	game.setstatus("loading");
 });
 
-sock.on("msg", function (msg) {
-	var data = decode(msg);
+sock.on("msg", function (message) {
+	var actor;
+	var data = decode(message);
 	var info = data[1];
 	switch (data[0]) {
 		case msg.init:
-			console.log("initial");
+			console.log("initialized");
 			player.sid = info.sid;
+			cam.target = player;
 			break;
+		case msg.game:
+			console.log("game %d started", info.number);
+			game.setstatus("game");
+			for (var i = 0; i < info.players; i++) {
+				if (i != player.gid) new Actor("friend", 2, 8, 3, 3, ":|", "", i);
+			}
+			break;
+		case msg.update:
+			for (var i = 0; i < info.gid.length; i++) {
+				if (info.gid[i] == player.gid) continue;
+				actor = stage.actors[stage.findByIndex(info.gid[i])];
+				if (!actor) continue;
+				actor.interp = 0;
+				actor.nx = info.x[i];
+				actor.ny = info.y[i];
+				actor.nvx = info.vx[i];
+				actor.nvy = info.vy[i];
+			}
+			break;	
+		case msg.endgame:
+			console.log("game ended");
+			game.setstatus("lobby");
+			break;	
 		case msg.join:
-			console.log("player joined");
-			//new Actor("friend", 4, 4, 3, 3);
+			console.log("joined game %d", info.number);
+			game.setstatus("lobby");
+			player.gid = info.gid;
 			break;
 		case msg.leave:
-			console.log("player left");
-			//stage.actors.splice(stage.actors.length, 1);
+			console.log("player %d left", info.index);
+			stage.removeByIndex(info.index);
 			break;
 	}
+});
+sock.on("disconnect", function () {
+	console.log("disconnected from server");
+	game.setstatus("disconnected");
 });
 
 function lerp(v0, v1, t) {
 	return (1 - t) * v0 + t * v1;
-}
-
-var stage = {
-	maxprops: 180,
-	props: [],
-	actors: [],
-	update: function () {
-		for (var i = 0; i < this.actors.length; i++) {
-			this.actors[i].update();
-		}
-	},
-	addprop: function (prop) {
-		this.props.push(prop);
-		if (this.props.length > this.maxprops) {
-			this.props.find(function (prop, i) {
-				if (prop.type == "grave") {
-					prop.delete();
-					this.props.splice(i, 1);
-					return true;
-				} else return false;
-			});
-		}
-	},
-	timer: 0
-};
-
-const audio = (function () {
-	var self = {};
-	Array.from($("audio")).forEach(function (element) {
-		this[element.id] = element;
-	}, self);
-	return self;
-})();
-
-//Constructor Objects
-function Prop(type, x, y, w, h, text) {
-	//Properties
-	this.type = type;
-	this.x = x || 0;
-	this.y = y || 0;
-	this.w = w || 2;
-	this.h = h || 2;
-	this.solid = type == "grave" ? false : true;
-
-	//Initialize
-	var dom = $("<div>", {
-		class: type,
-		style: sp("left:%dpc;top:%dpc;width:%dpc;height:%dpc;",
-			this.x, this.y, this.w, this.h),
-		text: text || ""
-	});
-	body.append(dom);
-	stage.addprop(this);
-
-	//Methods
-	this.delete = function () {
-		dom.remove();
-	};
-}
-
-function Actor(type, x, y, w, h, face, sid) {
-	//Properties
-	this.x = x || 0;
-	this.y = y || 0;
-	this.w = w || 2;
-	this.h = h || 2;
-	this.vx = 0;
-	this.vy = 0;
-	this.sid = sid || "";
-	this.face = face || ":|";
-	this.type = type;
-
-	//Initialize
-	var dom = $("<div>", {
-		class: type,
-		style: sp("left:%dpc;top:%dpc;width:%dpc;height:%dpc;", x, y, w, h),
-		text: face
-	});
-	body.append(dom);
-	stage.actors.push(this);
-
-	//Methods
-	this.move = function (dx, dy) {
-		this.x += dx;
-		this.y += dy;
-		dom.css("left", this.x + "pc");
-		dom.css("top", this.y + "pc");
-		dom.css(
-			"transform",
-			sp(
-				"scale(%f, %f) rotate(%fdeg)",
-				1 + Math.abs(this.vx / 3),
-				1 + Math.abs(this.vy / 3),
-				90 + this.vx * 15
-			)
-		);
-	};
-	this.update = function () {
-		if (this.y > 256) this.die();
-		if (this.type == "player" && this.canjump && input.jump()) {
-			player.vy = -0.72;
-			audio.jump.play();
-			this.canjump = false;
-		}
-		this.move(this.vx, this.vy);
-		this.vy += 0.04;
-		this.vx /= 2;
-		var spd = this.vy;
-		var coll = collision(this);
-		if (spd > 0.1 && this.vy === 0 && coll & BOTTOM) {
-			audio.land.play();
-		}
-		if (coll & BOTTOM) {
-			this.canjump = true;
-		}
-	};
-	this.die = function () {
-		new Prop("grave", this.x - this.vx, this.y - this.vy, 4, 3, ":(");
-		this.vx = this.vy = 0;
-		this.x = 2;
-		this.y = 6;
-		this.move(0, 0);
-		stage.timer = 0;
-		audio.die.play();
-	};
-	this.win = function () {
-		this.vx = this.vy = 0;
-		this.x = 2;
-		this.y = 6;
-		this.move(0, 0);
-		stage.timer = 0;
-		audio.win.play();
-	}
 }
 
 function collision(actor) {
@@ -400,6 +317,109 @@ function collision(actor) {
 	return collide;
 }
 
+var stage = {
+	maxprops: 180,
+	props: [],
+	actors: [],
+	update: function () {
+		for (var i = 0; i < this.actors.length; i++) {
+			this.actors[i].update();
+		}
+		this.timer++;
+	},
+	addprop: function (prop) {
+		this.props.push(prop);
+		if (this.props.length > this.maxprops) {
+			this.props.find(function (prop, i) {
+				if (prop.type == "grave") {
+					prop.delete();
+					this.props.splice(i, 1);
+					return true;
+				} else return false;
+			});
+		}
+	},
+	create: function (data) {
+		/* var y = 16;
+		for (var i = 0; i < 16; i++) {
+			y = Math.round(y + (Math.random() - 0.5) * 8);
+			var w = Math.round(4 + Math.random() * 4) * 2;
+			new Prop("platform", i * 16, y, w, 2);
+			if (i == 15) new Prop("platform goal", i * 16 + w + 2, y - 8, 2, 8);
+			if (Math.random() < 0.5 && i > 1) new Prop("spike", i * 16 + 4, y - 2, Math.round(w / 6) * 2);
+		}
+		new Prop("spike", 2, 44, 302, 2);
+		new Prop("platform", 0, 0, 2, 48);
+		new Prop("platform", -2, 46, 302, 2); */
+		new Prop("platform", -64, 16, 128, 4);
+	},
+	findByIndex: function (gid) {
+		return this.actors.findIndex(function (actor) {
+			if (actor.gid == gid) return true;
+			else return false;
+		});
+	},
+	removeByIndex: function (gid) {
+		const index = this.findByIndex(gid);
+		if (index != -1) this.actors.splice(index, 1);
+		else console.error("tried to remove actor #%d, but it doesn't exist", gid)
+	},
+	clear: function () {
+		for (var i = 0; i < this.props.length; i++)
+			this.props[i].delete();
+		this.props.length = 0;
+		for (var i = 1; i < this.actors.length; i++)
+			this.actors[i].delete();
+		this.actors.length = 1;
+	},
+	timer: 0
+};
+
+const audio = (function () {
+	var self = {};
+	Array.from($("audio")).forEach(function (element) {
+		this[element.id] = element;
+	}, self);
+	return self;
+})();
+
+const game = (function () {
+	var self = {
+		status: "loading",
+		setstatus: function(status) {
+			this.status = status;
+			switch (status) {
+				case "loading":
+					$(".loading").attr("src", "img/loading.svg");
+					$(".loading").css("visibility", "");
+					gbody.css("visibility", "hidden")
+					break;
+				case "lobby":
+					info.css("visibility", "");
+					gbody.css("visibility", "hidden");
+					stage.clear();
+					break;
+				case "game":
+					$(".loading").css("visibility", "hidden");
+					info.css("visibility", "");
+					gbody.css("visibility", "")
+					stage.create();
+					cam.zoom();
+					cam.reset();
+					break;
+				case "disconnected":
+					$(".loading").attr("src", "img/ex.svg");
+					$(".loading").css("visibility", "");
+					info.css("visibility", "");
+					gbody.css("visibility", "hidden");
+					stage.clear();
+					break;	
+			}
+		}
+	};
+	return self;
+})();
+
 const cam = {
 	x: 0,
 	y: 0,
@@ -410,23 +430,24 @@ const cam = {
 	target: null,
 	speed: 0.1,
 	update: function () {
-		this.follow();
+		if (this.target) this.follow();
 		window.scrollTo(0, 0);
-		body.css(
+		gbody.css(
 			"transform",
 			sp(
-				"scale(%.2f, %.2f) translate(%.2fpc, %.2fpc) %s",
+				"%s translate(%.2fpc, %.2fpc) scale(%.2f, %.2f)",
 				this.zoomlvl,
 				this.zoomlvl,
-				this.rot ? this.y + ((window.innerHeight / this.zoomlvl) / 32) : -this.x,
-				this.rot ? -this.x + ((window.innerHeight / this.zoomlvl) / 32) : -this.y,
-				this.rot ? "rotate(90deg)" : ""
+				this.rot ? "rotate(90deg)" : "",
+				this.rot ? -this.x - ((window.innerWidth / this.zoomlvl) / 16): -this.x,
+				this.rot ? -this.y - ((window.innerHeight / this.zoomlvl) / 16) : -this.y
 			)
 		);
 	},
 	zoom: function () {
 		this.rot = (window.innerHeight / window.innerWidth) > 1;
 		this.zoomlvl = ((window.innerWidth + window.innerHeight) / (1280 + 720)) + (this.rot ? 0.3 : 0);
+		this.reset();
 	},
 	follow: function () {
 		this.x = lerp(this.x, this.fx(), this.speed);
@@ -437,44 +458,172 @@ const cam = {
 		this.y = this.fy();
 	},
 	fx: function () {
-		return this.target.x + this.target.w / 2 - ((window.innerWidth) / 32);
+		return this.target.x + this.target.w / 2 - ((window.innerWidth / this.zoomlvl) / 32);
 	},
 	fy: function () {
-		return this.target.y + this.target.h / 2 - ((window.innerHeight / cam.zoomlvl) / 32);
+		return this.target.y + this.target.h / 2 - ((window.innerHeight / this.zoomlvl) / 32);
 	}
 };
-
-var y = 16;
-for (var i = 0; i < 16; i++) {
-	y = Math.round(y + (Math.random() - 0.5) * 8);
-	var w = Math.round(4 + Math.random() * 4) * 2;
-	new Prop("platform", i * 16, y, w, 2);
-	if (i == 15) new Prop("platform goal", i * 16 + w + 2, y - 8, 2, 8);
-	if (Math.random() < 0.5 && i > 1) new Prop("spike", i * 16 + 4, y - 2, Math.round(w / 6) * 2);
-}
-new Prop("spike", 2, 44, 302, 2);
-new Prop("platform", 0, 0, 2, 48);
-new Prop("platform", -2, 46, 302, 2);
+var ticks = 0;
 var player = new Actor("player", 2, 8, 3, 3, ":)");
-cam.target = player;
-cam.reset();
+
+//Constructor Objects
+function Prop(type, x, y, w, h, text) {
+	//Properties
+	this.type = type;
+	this.x = x || 0;
+	this.y = y || 0;
+	this.w = w || 2;
+	this.h = h || 2;
+	this.solid = type == "grave" ? false : true;
+
+	//Initialize
+	var dom = $("<div>", {
+		class: type,
+		style: sp("left:%dpc;top:%dpc;width:%dpc;height:%dpc;",
+			this.x, this.y, this.w, this.h),
+		text: text || ""
+	});
+	gbody.append(dom);
+	stage.addprop(this);
+
+	//Methods
+	this.delete = function () {
+		dom.remove();
+	};
+}
+
+function Actor(type, x, y, w, h, face, sid, gid) {
+	//Properties
+	this.x = x || 0;
+	this.y = y || 0;
+	this.w = w || 2;
+	this.h = h || 2;
+	this.vx = 0;
+	this.vy = 0;
+	this.dx = 0;
+	this.dy = 0;
+	this.nx = 0;
+	this.ny = 0;
+	this.nvx = 0;
+	this.nvy = 0;
+	this.npos = [0, 0]
+	this.interp = 0;
+	this.sid = sid || "";
+	this.gid = gid || 0;
+	this.face = face || ":|";
+	this.type = type;
+
+	//Initialize
+	var dom = $("<div>", {
+		class: type,
+		style: sp("left:%dpc;top:%dpc;width:%dpc;height:%dpc;", x, y, w, h),
+		text: face
+	});
+	gbody.append(dom);
+	stage.actors.push(this);
+
+	//Methods
+	this.move = function (dx, dy) {
+		this.x += dx;
+		this.y += dy;
+		dom.css("left", this.x + "pc");
+		dom.css("top", this.y + "pc");
+		dom.css(
+			"transform",
+			sp(
+				"scale(%f, %f) rotate(%fdeg)",
+				1 + Math.abs(this.dx / 3),
+				1 + Math.abs(this.dy / 3),
+				90 + this.dx * 15
+			)
+		);
+	};
+	this.update = function () {
+		switch (this.type) {
+			case "player":
+				this.vx /= 2;
+				if (input.right()) this.vx += 0.25;
+				if (input.left()) this.vx -= 0.25;
+				if (this.canjump && input.jump()) {
+					this.vy = -0.72;
+					audio.jump.play();
+					this.canjump = false;
+				}
+				this.vy += 0.04;
+				if (this.y > 256) this.die();
+				this.dx = this.vx;
+				this.dy = this.vy;
+				this.move(this.vx, this.vy);
+				var spd = this.vy;
+				var coll = collision(this);
+				if (spd > 0.1 && this.vy === 0 && coll & BOTTOM) {
+					audio.land.play();
+				}
+				if (coll & BOTTOM) {
+					this.canjump = true;
+				}
+				break;
+			case "friend":
+				this.interp += 1 / 2;
+				cubicHermite(
+					[this.x, this.y],
+					[this.vx, this.vy],
+					[this.nx, this.ny],
+					[this.nvx, this.nvy],
+					this.interp, this.npos
+				)
+				this.dx = lerp(this.dx, this.npos[0] - this.x, 0.5);
+				this.dy = lerp(this.dy, this.npos[1] - this.y, 0.5);
+				this.x = this.npos[0];
+				this.y = this.npos[1];
+				this.move(0, 0);
+				break;
+		}
+	};
+	this.die = function () {
+		new Prop("grave", this.x - this.vx, this.y - this.vy, 4, 3, ":(");
+		this.vx = this.vy = 0;
+		this.x = 2;
+		this.y = 6;
+		this.move(0, 0);
+		audio.die.play();
+	};
+	this.win = function () {
+		if (this.type != "player") return;
+		this.vx = this.vy = 0;
+		this.x = 2;
+		this.y = 6;
+		this.move(0, 0);
+		audio.win.play();
+	};
+	this.delete = function () {
+		dom.remove();
+	};
+}
 
 function gameloop(time) {
 	window.requestAnimationFrame(gameloop);
 	ticks++;
-	if (input.right()) player.vx += 0.25;
-	if (input.left()) player.vx -= 0.25;
-	if (stage) stage.update();
-	cam.update();
-	if (ticks % 20 == 0) send(msg.pos, {
-		x: player.x,
-		y: player.y
-	});
-	for (var i = 0; i < 128; i++, keyboard.keyspressed[i] = 0);
-	stage.timer++;
-	$("#i").html(sp("Time: %.1f<br>%s", stage.timer / 60, sock.connected ? "connected" : "not connected"));
+	info.html(sp("%s, %s", game.status, sock.connected ? "connected" : "not connected"));
+
+	switch (game.status) {
+		case "game":
+			if (stage) stage.update();
+			cam.update();
+			if (ticks % 3 == 0) send(msg.update, {
+				x: player.x,
+				y: player.y,
+				vx: player.vx,
+				vy: player.vy
+			});
+			break;
+	}
+
+	//Reset input
+	for (var i = 0; i < 128; keyboard.keyspressed[i] = 0, i++);
 	touch.right = false;
 	touch.left = false;
 }
-cam.zoom();
+
 window.requestAnimationFrame(gameloop);

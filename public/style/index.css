@@ -1,4 +1,15 @@
-@import url('https://fonts.googleapis.com/css?family=Quicksand:700');
+@font-face {
+	font-family: 'Quicksand';
+	font-style: normal;
+	font-weight: 700;
+	src: local('Quicksand Bold'), local('Quicksand-Bold'), url(../fonts/quicksand.woff2) format('woff2');
+	unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215;
+}
+
+@keyframes spin {
+	from {transform: rotate(0deg);}
+	to {transform: rotate(360deg);}
+}
 
 * {
 	user-select: none;
@@ -6,11 +17,17 @@
 
 body {
 	background: #3C4C4F;
-	font-family: Quicksand;
+	font-family: Quicksand, sans-serif;
 	color: #3C4C4F;
 	margin: 0;
 	padding: 0;
 	overflow: hidden;
+}
+
+#game {
+	position: fixed;
+	top: 0;
+	left: 0;
 }
 
 #i {
@@ -34,6 +51,7 @@ body {
 	position: absolute;
 	background: url("../img/spike.svg");
 	background-repeat: repeat-x;
+	background-clip: 1pc 1pc;
 }
 
 .friend, .player {
@@ -79,4 +97,14 @@ body {
 		#D2D8C0 1pc,
 		#D2D8C0 2pc
 	);
+}
+
+.loading {
+	position: fixed;
+	top: calc(50vh - 8pc);
+	left: calc(50vw - 8pc);
+	width: 16pc;
+	height: 16pc;
+	animation: linear spin infinite 2s;
+	z-index: 2;
 }
