@@ -6,4 +6,4 @@ Here is the [design document](https://docs.google.com/document/d/1luPd_t-Zen7it4
 
 # Implementation
 The game client is written in JavaScript using JQuery, Polyfill and Sprintf. It requires neither the canvas element nor WebGL to run. All graphics are driven by plain CSS, HTML and SVG graphics.
-The server (coming soon) is written in python.
+The server is written in python using Flask-SocketIO.

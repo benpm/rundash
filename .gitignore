@@ -1,3 +1,4 @@
 .vscode
 *.pyc
 .eslintrc.json
+jsconfig.json

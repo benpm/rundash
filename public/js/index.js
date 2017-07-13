@@ -1,3 +1,5 @@
+/* globals $, msgpack, sprintf, io */
+
 const keyboard = {
 	keymap: {
 		" ": 32,
@@ -122,7 +124,7 @@ $(document).keydown(function (event) {
 $(document).keyup(function (event) {
 	keyboard.keys[keyboard.keymap[event.key.toLowerCase()]] = 0;
 });
-$(window).resize(function (event) {
+$(window).resize(function () {
 	cam.zoom();
 });
 const touch = {
@@ -149,7 +151,7 @@ $(document).on("touchstart", function (event) {
 	if (touch.righthold || touch.lefthold) {
 		touch.right = true;
 	}
-	var x = event.touches[0].clientX;
+	//var x = event.touches[0].clientX;
 	var y = event.touches[0].clientY;
 	if (y > window.innerWidth / 2) touch.righthold = true;
 	else touch.lefthold = true;
@@ -160,7 +162,7 @@ $(document).on("touchend", function (event) {
 		touch.lefthold = false;
 	}
 });
-$(document).on("touchmove", function (event) {
+$(document).on("touchmove", function () {
 	console.log("move");
 });
 
@@ -435,12 +437,14 @@ const cam = {
 		gbody.css(
 			"transform",
 			sp(
-				"%s translate(%.2fpc, %.2fpc) scale(%.2f, %.2f)",
-				this.zoomlvl,
-				this.zoomlvl,
+				"%s scale(%.2f, %.2f) translate(%.2fpc, %.2fpc)",
 				this.rot ? "rotate(90deg)" : "",
-				this.rot ? -this.x - ((window.innerWidth / this.zoomlvl) / 16): -this.x,
-				this.rot ? -this.y - ((window.innerHeight / this.zoomlvl) / 16) : -this.y
+				this.zoomlvl,
+				this.zoomlvl,
+				this.rot ? -this.x - ((window.innerWidth / this.zoomlvl) / 32)
+					+ ((window.innerHeight / this.zoomlvl) / 32) : -this.x,
+				this.rot ? -this.y - ((window.innerHeight / this.zoomlvl) / 32)
+					- ((window.innerWidth / this.zoomlvl) / 32) : -this.y
 			)
 		);
 	},
@@ -602,7 +606,7 @@ function Actor(type, x, y, w, h, face, sid, gid) {
 	};
 }
 
-function gameloop(time) {
+function gameloop() {
 	window.requestAnimationFrame(gameloop);
 	ticks++;
 	info.html(sp("%s, %s", game.status, sock.connected ? "connected" : "not connected"));
