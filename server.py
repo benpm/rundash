@@ -3,6 +3,8 @@ from enum import IntEnum as enum
 import flask
 import flask_socketio as io
 import msgpack
+import gzip
+import json
 
 # Helper functions
 def pack(obj):
@@ -40,6 +42,12 @@ class Game(object):
         self.started = False
         self.ttl = 40
         self.gametime = 0
+        self.props = []
+        self.actors = []
+        self.spawnx = 0
+        self.spawny = 0
+        self.compressed = None
+        self.generate()
         games.append(self)
         print("created", self.room)
 
@@ -64,7 +72,10 @@ class Game(object):
     def start(self):
         self.started = True
         self.gametime = 20 * 60
-        send(self.room, msg.game, {"number": self.num, "players": len(self.players)})
+        send(self.room, msg.game, {
+            "number": self.num,
+            "players": len(self.players),
+            "data": self.compressed})
         print("started", self.room)
 
     def stop(self):
@@ -101,29 +112,37 @@ class Game(object):
             #todo: count down until time is up (1 minute)
 
         # Static file serving
+    def generate(self):
+        self.props.append(Prop(-64, 16, 128, 2, "platform"))
+        self.props.append(Prop(-60, 0, 2, 14, "platform goal"))
+        self.props.append(Prop(20, 14, 10, 2, "spike"))
+        self.compress()
+    def compress(self):
+        props = [prop.asdict() for prop in self.props]
+        self.compressed = json.dumps({"props": props})
 class Prop(object):
     "Static object on stage. Position example: [x, y]; and size: [width, height]."
-    def __init__(self, position, size, proptype):
-        self.x = position[0]
-        self.y = position[1]
-
-        self.width = size[0]
-        self.height = size[1]
-
+    def __init__(self, x, y, w, h, proptype):
+        self.x = x
+        self.y = y
+        self.width = w
+        self.height = h
         self.type = proptype
 
-    def update(self, x, y, vx, vy):
-        self.dx = x - self.x
-        self.dy = y - self.y
-
+    def update(self, x, y):
         self.x = x
         self.y = y
 
-        self.vx = vx
-        self.vy = vy
-
+    def asdict(self):
+        "Returns self as dictionary object, useful for serialization"
+        return {
+            "type": self.type,
+            "x": self.x,
+            "y": self.y,
+            "w": self.width,
+            "h": self.height}
 class Actor(object):
-    "Playable character"
+    "Character"
     def __init__(self, x, y):
         # Position
         self.x = x

@@ -1,4 +1,4 @@
-/* globals $, msgpack, sprintf, io */
+/* globals $, msgpack, sprintf, io, pako */
 
 const keyboard = {
 	keymap: {
@@ -230,6 +230,7 @@ sock.on("msg", function (message) {
 		case msg.game:
 			console.log("game %d started", info.number);
 			game.setstatus("game");
+			stage.create(info.data);
 			for (var i = 0; i < info.players; i++) {
 				if (i != player.gid) new Actor("friend", 2, 8, 3, 3, ":|", "", i);
 			}
@@ -319,6 +320,12 @@ function collision(actor) {
 	return collide;
 }
 
+function uintToString(uintArray) {
+	var encodedString = String.fromCharCode.apply(null, uintArray),
+		decodedString = decodeURIComponent(escape(encodedString));
+	return decodedString;
+}
+
 var stage = {
 	maxprops: 180,
 	props: [],
@@ -353,7 +360,17 @@ var stage = {
 		new Prop("spike", 2, 44, 302, 2);
 		new Prop("platform", 0, 0, 2, 48);
 		new Prop("platform", -2, 46, 302, 2); */
-		new Prop("platform", -64, 16, 128, 4);
+		/* new Prop("platform", -10, 16, 20, 8);
+		var str = pako.inflate(data, {to: "string"});
+		console.log(str); */
+		var props = JSON.parse(data).props;
+		for (var i = 0; i < props.length; i++) {
+			new Prop(props[i].type,
+				props[i].x,
+				props[i].y,
+				props[i].w,
+				props[i].h);
+		}
 	},
 	findByIndex: function (gid) {
 		return this.actors.findIndex(function (actor) {
@@ -404,8 +421,7 @@ const game = (function () {
 				case "game":
 					$(".loading").css("visibility", "hidden");
 					info.css("visibility", "");
-					gbody.css("visibility", "")
-					stage.create();
+					gbody.css("visibility", "");
 					cam.zoom();
 					cam.reset();
 					break;
