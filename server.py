@@ -101,32 +101,30 @@ class Game(object):
             #todo: count down until time is up (1 minute)
 
         # Static file serving
-class Props(object):
-	"Static object on stage. Position example: [x, y]; and size: [width, height]."
-	def __init__(self, position, size, type_):
-		self.x = position[0]
-		self.y = position[1]
+class Prop(object):
+    "Static object on stage. Position example: [x, y]; and size: [width, height]."
+    def __init__(self, position, size, proptype):
+        self.x = position[0]
+        self.y = position[1]
 
-		self.width = size[0]
-		self.height = size[1]
+        self.width = size[0]
+        self.height = size[1]
 
-		self.type = type_
-	
-	def update(self, x, y, vx, vy):
-		self.dx = x - self.x
-		self.dy = y - self.y
+        self.type = proptype
 
-		self.x = x
-		self.y = y
+    def update(self, x, y, vx, vy):
+        self.dx = x - self.x
+        self.dy = y - self.y
 
-		self.vx = vx
-		self.vy = vy
+        self.x = x
+        self.y = y
+
+        self.vx = vx
+        self.vy = vy
 
 class Actor(object):
     "Playable character"
-    def __init__(self, sid, x, y, room="lobby"):
-        # Session ID string
-        self.sid = sid
+    def __init__(self, x, y):
         # Position
         self.x = x
         self.y = y
@@ -136,11 +134,6 @@ class Actor(object):
         # Change in position
         self.dx = 0
         self.dy = 0
-        # Game index
-        self.gindex = -1
-        # Room (lobby by default)
-        self._room = room
-        self.set_room(room)
 
     def update(self, x, y, vx, vy):
         self.dx = x - self.x
@@ -150,6 +143,20 @@ class Actor(object):
         self.vx = vx
         self.vy = vy
 
+class Player(Actor):
+    def __init__(self, sid, x, y, room="lobby"):
+        super(Player, self).__init__(x, y)
+
+        # Session ID string
+        self.sid = sid
+
+        # Game index
+        self.gindex = -1
+
+        # Room (lobby by default)
+        self._room = room
+        self.set_room(room)
+
     def send(self, msgtype, data):
         send(self.sid, msgtype, data)
 
@@ -157,16 +164,13 @@ class Actor(object):
         return self._room
 
     def set_room(self, roomname):
-        with app.app_context(): io.join_room(roomname, self.sid, "/")
+        with app.app_context():
+            io.join_room(roomname, self.sid, "/")
         self._room = roomname
 
     def get_game(self):
         if self.get_room() != "lobby":
             return games[int(self.get_room().split("_")[1])]
-
-class Player(Actor):
-    def __init__(self, *args, **kwargs):
-	    super(Player, self).__init__(*args, **kwargs)
 
 @app.route("/")
 def index():
