@@ -123,7 +123,7 @@ class Props(object):
 		self.vy = vy
 
 class Actor(object):
-	"Playable character"
+    "Playable character"
     def __init__(self, sid, x, y, room="lobby"):
         # Session ID string
         self.sid = sid
