@@ -166,7 +166,7 @@ class Props(object):
 class Actor(Player):
 	"Playable character"
 	def __init__(self, *args, **kwargs):
-		super(Actor, self).__init__(self, *args, **kwargs)
+		super(Actor, self).__init__(*args, **kwargs)
 
 @app.route("/")
 def index():
