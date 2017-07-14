@@ -142,6 +142,32 @@ class Game(object):
             #todo: count down until time is up (1 minute)
 
         # Static file serving
+class Props(object):
+	"Static object on stage. Position example: [x, y]; and size: [width, height]."
+	def __init__(self, position, size, type_):
+		self.x = position[0]
+		self.y = position[1]
+
+		self.width = size[0]
+		self.height = size[1]
+
+		self.type = type_
+	
+	def update(self, x, y, vx, vy):
+		self.dx = x - self.x
+		self.dy = y - self.y
+
+		self.x = x
+		self.y = y
+
+		self.vx = vx
+		self.vy = vy
+
+class Actor(Player):
+	"Playable character"
+	def __init__(self, *args, **kwargs):
+		super(Actor, self).__init__(self, *args, **kwargs)
+
 @app.route("/")
 def index():
     return flask.send_file("./public/index.html")
