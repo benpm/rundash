@@ -255,6 +255,8 @@ sock.on("msg", function (message) {
 			console.log("joined game %d", info.number);
 			game.setstatus("lobby");
 			player.gid = info.gid;
+			stage.spawnx = player.x = info.x;
+			stage.spawny = player.y = info.y;
 			break;
 		case msg.leave:
 			console.log("player %d left", info.index);
@@ -330,6 +332,8 @@ var stage = {
 	maxprops: 180,
 	props: [],
 	actors: [],
+	spawnx: 0,
+	spawny: 0,
 	update: function () {
 		for (var i = 0; i < this.actors.length; i++) {
 			this.actors[i].update();
@@ -345,7 +349,7 @@ var stage = {
 					this.props.splice(i, 1);
 					return true;
 				} else return false;
-			});
+			}, this);
 		}
 	},
 	create: function (data) {
@@ -537,7 +541,7 @@ function Actor(type, x, y, w, h, face, sid, gid) {
 	//Initialize
 	var dom = $("<div>", {
 		class: type,
-		style: sp("left:%dpc;top:%dpc;width:%dpc;height:%dpc;", x, y, w, h),
+		style: sp("width:%dpc;height:%dpc;", w, h),
 		text: face
 	});
 	gbody.append(dom);
@@ -547,12 +551,11 @@ function Actor(type, x, y, w, h, face, sid, gid) {
 	this.move = function (dx, dy) {
 		this.x += dx;
 		this.y += dy;
-		dom.css("left", this.x + "pc");
-		dom.css("top", this.y + "pc");
 		dom.css(
 			"transform",
 			sp(
-				"scale(%f, %f) rotate(%fdeg)",
+				"translate(%.2fpc, %.2fpc) scale(%.2f, %.2f) rotate(%.2fdeg)",
+				this.x, this.y,
 				1 + Math.abs(this.dx / 3),
 				1 + Math.abs(this.dy / 3),
 				90 + this.dx * 15
@@ -571,7 +574,7 @@ function Actor(type, x, y, w, h, face, sid, gid) {
 					this.canjump = false;
 				}
 				this.vy += 0.04;
-				if (this.y > 256) this.die();
+				if (this.y > 64) this.die();
 				this.dx = this.vx;
 				this.dy = this.vy;
 				this.move(this.vx, this.vy);
@@ -585,7 +588,7 @@ function Actor(type, x, y, w, h, face, sid, gid) {
 				}
 				break;
 			case "friend":
-				this.interp += 1 / 2;
+				this.interp += (1 - this.interp) / 2;
 				cubicHermite(
 					[this.x, this.y],
 					[this.vx, this.vy],
@@ -595,6 +598,8 @@ function Actor(type, x, y, w, h, face, sid, gid) {
 				)
 				this.dx = lerp(this.dx, this.npos[0] - this.x, 0.5);
 				this.dy = lerp(this.dy, this.npos[1] - this.y, 0.5);
+				this.dx = Math.abs(this.dx) > 1.5 ? 0 : this.dx;
+				this.dy = Math.abs(this.dy) > 1.5 ? 0 : this.dy;
 				this.x = this.npos[0];
 				this.y = this.npos[1];
 				this.move(0, 0);
@@ -646,4 +651,5 @@ function gameloop() {
 	touch.left = false;
 }
 
+game.setstatus("loading");
 window.requestAnimationFrame(gameloop);

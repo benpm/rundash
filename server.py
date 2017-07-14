@@ -1,3 +1,4 @@
+import random
 import time
 from enum import IntEnum as enum
 import flask
@@ -49,7 +50,7 @@ class Game(object):
         self.compressed = None
         self.generate()
         games.append(self)
-        print("created", self.room)
+        print("[GAME]", "created", self.room)
 
     def addplayer(self, player):
         assert self.started == False
@@ -58,8 +59,14 @@ class Game(object):
         # Add player to room
         player.gindex = len(self.players)
         player.set_room(self.room)
-        player.send(msg.join, {"number": self.num, "gid": player.gindex})
-        print("added player to", self.room)
+        player.update(self.spawnx, self.spawny, 0, 0)
+        player.send(msg.join, {
+            "number": self.num,
+            "gid": player.gindex,
+            "x": self.spawnx,
+            "y": self.spawny
+        })
+        print("[GAME]", "added player to", self.room)
         self.players.append(player)
 
     def removeplayer(self, player):
@@ -67,7 +74,6 @@ class Game(object):
         assert len(self.players) > 0
         self.players.remove(player)
         send(self.room, msg.leave, {"index": player.gindex})
-        print("removed %s from %s, %d left" % (player.sid, self.room, len(self.players)))
 
     def start(self):
         self.started = True
@@ -76,7 +82,7 @@ class Game(object):
             "number": self.num,
             "players": len(self.players),
             "data": self.compressed})
-        print("started", self.room)
+        print("[GAME]", "started", self.room)
 
     def stop(self):
         for i in range(len(games)):
@@ -85,7 +91,7 @@ class Game(object):
                 del games[i]
                 break
         self.started = False
-        print("stopped", self.room, " games left:", games)
+        print("[GAME]", "stopped", self.room)
 
     def update(self):
         if self.started == False:
@@ -113,9 +119,28 @@ class Game(object):
 
         # Static file serving
     def generate(self):
-        self.props.append(Prop(-64, 16, 128, 2, "platform"))
-        self.props.append(Prop(-60, 0, 2, 14, "platform goal"))
-        self.props.append(Prop(20, 14, 10, 2, "spike"))
+        # Starting platform
+        self.props.append(Prop(-8, 8, 16, 2, "platform"))
+
+        # Add platforms
+        y = 8
+        w = 0
+        for i in range(16):
+            y += random.randint(-4, 4)
+            w = random.randint(6, 14)
+            self.props.append(Prop(10 + i * 16, y, w, 2, "platform"))
+            self.props.append(
+                Prop(
+                    10 + i * 16 + random.randint(1, round(w / 2)),
+                    y - 2,
+                    random.randint(1, round(w / 4)) * 2,
+                    2,
+                    "spike"))
+
+        # Goal
+        self.props.append(Prop(16 * 16 + w + 2, y - 16, 2, 16, "platform goal"))
+
+        # Compress
         self.compress()
     def compress(self):
         props = [prop.asdict() for prop in self.props]
@@ -215,7 +240,7 @@ def recieve(message):
 def connect():
     "New connected client"
     sid = flask.request.sid
-    print("connection:", sid, flask.request.referrer)
+    print("[SERVER]", "connection:", flask.request.referrer)
     players[sid] = player = Player(sid, 2, 8, "lobby")
     player.send(msg.init, {"sid": sid})
     waitqueue.append(player)
@@ -224,7 +249,7 @@ def connect():
 def disconnect():
     "Client disconnected"
     player = players[flask.request.sid]
-    print("disconnection:", player.sid, flask.request.referrer)
+    print("[SERVER]", "disconnection:", flask.request.referrer)
     if player.get_room() != "lobby":
         # Remove player from their game
         player.get_game().removeplayer(player)
@@ -238,7 +263,7 @@ def disconnect():
 def gameloop():
     "The main game loop"
     dtick = 0
-    print("started gameloop")
+    print("[SERVER]", "started gameloop")
     while True:
         # Start timer
         dtick = time.clock()
@@ -261,6 +286,6 @@ def gameloop():
         if dtick < server["ticktime"]: sock.sleep(server["ticktime"] - dtick)
 
 if __name__ == "__main__":
-    print("starting...")
+    print("[SERVER]", "starting...")
     gamethread = sock.start_background_task(gameloop)
     sock.run(app, host="0.0.0.0", port=8080)
