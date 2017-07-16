@@ -10,10 +10,26 @@
 
 <body>
 	<!-- Supports all browsers (even IE). Does not require canvas or WebGL -->
-	<p style="color:#7A9E9F" id="i"></p>
+
+	<!-- Game UI -->
+	<div class="leaderboard">
+		<table>
+			<tbody>
+				<tr id="header">
+					<th></th>
+					<th>Player</th>
+					<th>Time</th>
+				</tr>
+			</tbody>
+		</table>
+		<div class="nextbutton" onclick="game.setstatus('newgame');"></div>
+	</div>
 	<img src="img/loading.svg" class="loading">
+	<img src="img/ex.svg" class="loading disconnected">
+	<p style="color:#7A9E9F" id="i">information</p>
 	
 	<div id="game">
+
 		<!-- Audio -->
 		<audio id="jump" src="audio/jump.mp3" type="audio/mp3" preload="auto"></audio>
 		<audio id="land" src="audio/land.mp3" type="audio/mp3" preload="auto"></audio>

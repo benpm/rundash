@@ -32,8 +32,8 @@ body {
 
 #i {
 	position: fixed;
-	left: 1pc;
-	top: 1pc;
+	left: .5pc;
+	top: .5pc;
 	font-size: calc(2vw + 2vh);
 	text-shadow: 0px .2pc 0px #334143;
 	z-index: 2;
@@ -99,7 +99,8 @@ body {
 	);
 }
 
-.loading {
+.loading,
+.disconnected {
 	position: fixed;
 	top: calc(50vh - 8pc);
 	left: calc(50vw - 8pc);
@@ -107,4 +108,76 @@ body {
 	height: 16pc;
 	animation: linear spin infinite 2s;
 	z-index: 2;
+}
+
+.disconnected {
+	animation: none;
+}
+
+/* Leaderboard */
+
+.leaderboard {
+	position: absolute;
+	background: #334143;
+	border-radius: 2pc;
+	width: 80vw;
+	height: 80vh;
+	left: 10vw;
+	top: 10vh;
+	color: #B8D8D8;
+	font-size: calc(2vw + 2vh);
+}
+
+th,
+td {
+	width: 10%;
+	text-align: center;
+	padding: 0;
+}
+tr.dnf {
+	color: #7A9E9F;
+}
+tr.me {
+	color: #EEF5DB;
+}
+
+th:nth-child(1),
+td:nth-child(1) {
+	width: 1%;
+	/* border-left: 1pc; */
+}
+
+tr:nth-child(odd) {
+	background: rgba(0, 0, 0, 0.2);
+	/* border: #3C4C4F 2pc; */
+}
+
+table {
+	border-collapse: collapse;
+	margin: 1pc;
+}
+
+th {
+	height: 6pc;
+	text-decoration: underline;
+}
+
+.nextbutton {
+	width: 3pc;
+	height: 3pc;
+	background-color: #293436;
+	transition: background-color 0.2s;
+	border-radius: 1pc;
+	background-image: url("../img/arrow.svg");
+	background-size: cover;
+	padding: .25pc;
+	background-origin: content-box;
+	background-repeat: no-repeat;
+	float: right;
+	margin-right: .5pc;
+	cursor: pointer;
+}
+
+.nextbutton:hover {
+	background-color: #b8d8d8;
 }

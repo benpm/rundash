@@ -170,7 +170,9 @@ const address = location.href;
 const sock = io.connect(address);
 const sp = sprintf;
 const gbody = $("#game");
-const info = $("#i");
+const infoelem = $("#i");
+const leaderboard = $(".leaderboard");
+const lbtable = $(".leaderboard tbody");
 const BOTTOM = 1;
 const TOP = 2;
 const LEFT = 4;
@@ -182,11 +184,14 @@ const msg = {
 	update: 4,
 	login: 5,
 	init: 6,
-	endgame: 7
+	endgame: 7,
+	win: 8
 };
 
 function cubicHermite(p0, v0, p1, v1, t, f) {
-	var ti = (t - 1), t2 = t * t, ti2 = ti * ti,
+	var ti = (t - 1),
+		t2 = t * t,
+		ti2 = ti * ti,
 		h00 = (1 + 2 * t) * ti2,
 		h10 = t * ti2,
 		h01 = t2 * (3 - 2 * t),
@@ -246,11 +251,8 @@ sock.on("msg", function (message) {
 				actor.nvx = info.vx[i];
 				actor.nvy = info.vy[i];
 			}
-			break;	
-		case msg.endgame:
-			console.log("game ended");
-			game.setstatus("lobby");
-			break;	
+			infoelem.text(sp("%d seconds left", info.time));
+			break;
 		case msg.join:
 			console.log("joined game %d", info.number);
 			game.setstatus("lobby");
@@ -262,8 +264,32 @@ sock.on("msg", function (message) {
 			console.log("player %d left", info.index);
 			stage.removeByIndex(info.index);
 			break;
+		case msg.endgame:
+			console.log("game ended");
+			game.setstatus("endgame");
+			$(".leaderboard tr").remove("tr:not(#header)");
+			for (var i = 0, row, dnf; i < info.length; i++) {
+				dnf = !Boolean(info[i].time);
+				lbtable.append(row = $("<tr>", {
+					class: (info[i].sid == player.sid ? "me " : "") + (dnf ? "dnf" : "")
+				}));
+				row.append($("<td>", {
+					text: dnf ? "" : (i + 1).toString()
+				}));
+				row.append($("<td>", {
+					text: info[i].name
+				}));
+				row.append($("<td>", {
+					text: dnf ? "DNF" : (info[i].time / 20).toFixed(1) + " sec"
+				}));
+			}
+			break;
+		case msg.win:
+			console.log("win: %d seconds", info.time);
+			break;
 	}
 });
+
 sock.on("disconnect", function () {
 	console.log("disconnected from server");
 	game.setstatus("disconnected");
@@ -409,33 +435,50 @@ const audio = (function () {
 const game = (function () {
 	var self = {
 		status: "loading",
-		setstatus: function(status) {
+		setstatus: function (status) {
+			console.info(sp("STATUS: %s -> %s", this.status, status));
 			this.status = status;
 			switch (status) {
 				case "loading":
-					$(".loading").attr("src", "img/loading.svg");
-					$(".loading").css("visibility", "");
-					gbody.css("visibility", "hidden")
+					$(".loading").show();
+					$(".disconnected").hide();
+					leaderboard.hide();
+					gbody.hide()
 					break;
 				case "lobby":
-					info.css("visibility", "");
-					gbody.css("visibility", "hidden");
+					$(".loading").show();
+					$(".disconnected").hide();
+					infoelem.hide();
+					gbody.hide();
 					stage.clear();
+					leaderboard.hide();
 					break;
 				case "game":
-					$(".loading").css("visibility", "hidden");
-					info.css("visibility", "");
-					gbody.css("visibility", "");
+					$(".loading").hide();
+					$(".disconnected").hide();
+					infoelem.show();
+					gbody.show();
 					cam.zoom();
 					cam.reset();
 					break;
+				case "endgame":
+					$(".disconnected").hide();
+					infoelem.hide();
+					gbody.hide();
+					leaderboard.show();
+					break;
+				case "newgame":
+					send(msg.game, 0);
+					this.setstatus("lobby");
+					break;
 				case "disconnected":
-					$(".loading").attr("src", "img/ex.svg");
-					$(".loading").css("visibility", "");
-					info.css("visibility", "");
-					gbody.css("visibility", "hidden");
+					$(".loading").hide();
+					$(".disconnected").show();
+					gbody.hide();
+					infoelem.hide();
+					leaderboard.hide();
 					stage.clear();
-					break;	
+					break;
 			}
 		}
 	};
@@ -461,10 +504,10 @@ const cam = {
 				this.rot ? "rotate(90deg)" : "",
 				this.zoomlvl,
 				this.zoomlvl,
-				this.rot ? -this.x - ((window.innerWidth / this.zoomlvl) / 32)
-					+ ((window.innerHeight / this.zoomlvl) / 32) : -this.x,
-				this.rot ? -this.y - ((window.innerHeight / this.zoomlvl) / 32)
-					- ((window.innerWidth / this.zoomlvl) / 32) : -this.y
+				this.rot ? -this.x - ((window.innerWidth / this.zoomlvl) / 32) +
+				((window.innerHeight / this.zoomlvl) / 32) : -this.x,
+				this.rot ? -this.y - ((window.innerHeight / this.zoomlvl) / 32) -
+				((window.innerWidth / this.zoomlvl) / 32) : -this.y
 			)
 		);
 	},
@@ -588,12 +631,9 @@ function Actor(type, x, y, w, h, face, sid, gid) {
 				}
 				break;
 			case "friend":
-				this.interp += (1 - this.interp) / 2;
+				this.interp += (1 - this.interp) / 3;
 				cubicHermite(
-					[this.x, this.y],
-					[this.vx, this.vy],
-					[this.nx, this.ny],
-					[this.nvx, this.nvy],
+					[this.x, this.y], [this.vx, this.vy], [this.nx, this.ny], [this.nvx, this.nvy],
 					this.interp, this.npos
 				)
 				this.dx = lerp(this.dx, this.npos[0] - this.x, 0.5);
@@ -620,6 +660,7 @@ function Actor(type, x, y, w, h, face, sid, gid) {
 		this.x = 2;
 		this.y = 6;
 		this.move(0, 0);
+		send(msg.win, 0);
 		audio.win.play();
 	};
 	this.delete = function () {
@@ -630,7 +671,7 @@ function Actor(type, x, y, w, h, face, sid, gid) {
 function gameloop() {
 	window.requestAnimationFrame(gameloop);
 	ticks++;
-	info.html(sp("%s, %s", game.status, sock.connected ? "connected" : "not connected"));
+	//info.html(sp("%s, %s", game.status, sock.connected ? "connected" : "not connected"));
 
 	switch (game.status) {
 		case "game":
