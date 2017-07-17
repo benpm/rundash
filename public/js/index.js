@@ -551,6 +551,7 @@ const cam = {
 		this.rot = (window.innerHeight / window.innerWidth) > 1;
 		rotchange = (rotchange != this.rot);
 		this.zoomlvl = ((window.innerWidth + window.innerHeight) / (1280 + 720)) + (this.rot ? 0.3 : 0);
+		this.zoomlvl *= 0.7;
 		this.reset();
 		if (rotchange) {
 			if (this.rot) {
