@@ -77,6 +77,8 @@ body {
 	font-weight: bolder;
 	font-family: "UbuntuMono", monospace;
 	writing-mode: tb-rl;
+	top: 0;
+	left: 0;
 }
 
 .player {
