@@ -172,6 +172,7 @@ const sp = sprintf;
 const gbody = $("#game");
 const infoelem = $("#i");
 const leaderboard = $(".leaderboard");
+const leaderbplace = $(".leaderboard p#placement");
 const lbtable = $(".leaderboard tbody");
 const BOTTOM = 1;
 const TOP = 2;
@@ -224,7 +225,7 @@ sock.on("connect", function () {
 });
 
 sock.on("msg", function (message) {
-	var actor;
+	var actor, placement;
 	var data = decode(message);
 	var info = data[1];
 	switch (data[0]) {
@@ -268,9 +269,13 @@ sock.on("msg", function (message) {
 		case msg.endgame:
 			console.log("game ended");
 			game.setstatus("endgame");
+
+			//Assemble leaderboard
 			$(".leaderboard tr").remove("tr:not(#header)");
+			placement = -1
 			for (var i = 0, row, dnf; i < info.length; i++) {
 				dnf = !Boolean(info[i].time);
+				if (info[i].sid == player.sid && !dnf) placement = i + 1;
 				lbtable.append(row = $("<tr>", {
 					class: (info[i].sid == player.sid ? "me " : "") + (dnf ? "dnf" : "")
 				}));
@@ -283,6 +288,19 @@ sock.on("msg", function (message) {
 				row.append($("<td>", {
 					text: dnf ? "DNF" : (info[i].time / 20).toFixed(1) + " sec"
 				}));
+			}
+
+			//Create placement text
+			leaderbplace.removeClass("winner");
+			switch (placement) {
+				case -1: leaderbplace.text("Did Not Finish"); break;
+				case 1:
+					leaderbplace.text("1st Place!");
+					leaderbplace.addClass("winner");
+					break;
+				case 2: leaderbplace.text("2nd Place"); break;
+				case 3: leaderbplace.text("3rd Place"); break;
+				default: leaderbplace.text("Runner Up"); break;
 			}
 			break;
 		case msg.win:
