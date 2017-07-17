@@ -198,11 +198,62 @@ class Game(object):
 
         # Static file serving
     def generate(self):
-        # Starting platform
-        self.props.append(Prop(-10, 10, 10, 4, "platform"))
+        # Prop (x, y, w, h, proptype)
+        # Prop types: "platform", "goal", "spike"
+        max_x = 36
+        min_x = 10
 
+        max_y_up = 8
+        max_y_down = 10
+        min_y = 0
+
+        x = -7
+        y = 10
+        w = 20
+        h = 4
+
+        # Starting platform     
+        self.props.append(Prop(x, y, w, h, "platform"))
+        
+        num_platforms = random.randint(7, 15)
+        for i in range(0, num_platforms):
+            plat_vert_sign = random.choice([1, -1])
+
+            delta_x = random.uniform(min_x, max_x)
+            norm_x = self.normalize(delta_x, max_x, min_x)
+
+            if plat_vert_sign == 1:
+                delta_y = (1.5 - norm_x) * random.uniform(8, 10)
+            else:
+                delta_y = (1.05 - norm_x) * random.uniform(8, 10)
+
+            delta_y *= plat_vert_sign
+            prev_dist = distance(x + w, y + w, x + delta_x, y + delta_y)
+
+            x += delta_x + w
+            y += delta_y
+
+            w = random.uniform(10, 30)
+            self.props.append(Prop(x, y, w, h, "platform"))
+            # Need to base spike probability on normalized values
+            if random.random() < 0.5:
+                self.props.append(
+                    Prop(
+                        x + random.uniform(2, round(w / 2)),
+                        y - 5,
+                        5,
+                        5,
+                        "spike"))
+            print("-----------------------------------")
+            print("Platform {} to platform {} stats:".format(i, i + 1))
+            print("Normalized x: {}".format(norm_x))
+            # print("Normalized y: {}".format(norm_y))
+            print("Delta_x: {}".format(delta_x))
+            print("Delta_y: {}".format(delta_y))
+            print("Distance: {}".format(prev_dist))
+                
         # Goal
-        self.goal = Prop(12, -10, 10, 4, "platform goal")
+        self.goal = Prop(x + 30 + w, y - 20, 2, 16, "platform goal")
         self.props.append(self.goal)
 
         # Compress
@@ -212,6 +263,8 @@ class Game(object):
         props = [prop.asdict() for prop in self.props]
         self.compressed = json.dumps({"props": props})
 
+    def normalize(self, given, max_, min_):
+        return (given - min_)/(max_ - min_)
 
 class Prop(object):
     "Static object on stage. Position example: [x, y]; and size: [width, height]."
