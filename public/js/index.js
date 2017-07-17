@@ -185,7 +185,8 @@ const msg = {
 	login: 5,
 	init: 6,
 	endgame: 7,
-	win: 8
+	win: 8,
+	dead: 9
 };
 
 function cubicHermite(p0, v0, p1, v1, t, f) {
@@ -285,7 +286,7 @@ sock.on("msg", function (message) {
 			}
 			break;
 		case msg.win:
-			console.log("win: %d seconds", info.time);
+			console.log("win: %.2f seconds", info.time / 20);
 			break;
 	}
 });
@@ -414,12 +415,10 @@ var stage = {
 		else console.error("tried to remove actor #%d, but it doesn't exist", gid)
 	},
 	clear: function () {
-		for (var i = 0; i < this.props.length; i++)
-			this.props[i].delete();
-		this.props.length = 0;
-		for (var i = 1; i < this.actors.length; i++)
-			this.actors[i].delete();
-		this.actors.length = 1;
+		for (var i = this.props.length - 1; i >= 0; i--)
+			this.props.pop().delete();
+		for (var i = this.actors.length - 1; i >= 1; i--)
+			this.actors.pop().delete();
 	},
 	timer: 0
 };
@@ -512,9 +511,20 @@ const cam = {
 		);
 	},
 	zoom: function () {
+		var rotchange = this.rot;
 		this.rot = (window.innerHeight / window.innerWidth) > 1;
+		rotchange = (rotchange != this.rot);
 		this.zoomlvl = ((window.innerWidth + window.innerHeight) / (1280 + 720)) + (this.rot ? 0.3 : 0);
 		this.reset();
+		if (rotchange) {
+			if (this.rot) {
+				leaderboard.addClass("landscape");
+				infoelem.addClass("landscape");
+			} else {
+				leaderboard.removeClass("landscape");
+				infoelem.removeClass("landscape");
+			}
+		}
 	},
 	follow: function () {
 		this.x = lerp(this.x, this.fx(), this.speed);
@@ -647,6 +657,7 @@ function Actor(type, x, y, w, h, face, sid, gid) {
 		}
 	};
 	this.die = function () {
+		if (this.type == "player") send(msg.dead, { x: this.x, y: this.y });
 		new Prop("grave", this.x - this.vx, this.y - this.vy, 4, 3, ":(");
 		this.vx = this.vy = 0;
 		this.x = 2;

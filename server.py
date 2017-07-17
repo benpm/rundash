@@ -38,7 +38,8 @@ sock = io.SocketIO(app)
 TICK_SEC = 20
 TICK = 1 / TICK_SEC
 GAME_TICKS = TICK_SEC * 60
-msg = enum("msg", "join leave game update login init endgame win")
+TTL = TICK_SEC * 4
+msg = enum("msg", "join leave game update login init endgame win dead")
 
 # Game structures
 class Game(object):
@@ -48,7 +49,7 @@ class Game(object):
         self.title = "[GAME %d]" % self.num
         self.players = []
         self.started = False
-        self.ttl = 40
+        self.ttl = TTL
         self.gametime = 0
         self.props = []
         self.actors = []
@@ -162,7 +163,7 @@ class Game(object):
                 "y": [],
                 "vx": [],
                 "vy": [],
-                "time": floor(self.timer / TICK_SEC)
+                "time": ceil(self.timer / TICK_SEC)
             }
             for player in self.players:
                 update["gid"].append(player.gindex)
@@ -199,7 +200,7 @@ class Game(object):
             if random.random() < 0.5:
                 self.props.append(
                     Prop(
-                        10 + i * 16 + random.randint(1, round(w / 2)),
+                        10 + i * 16 + random.randint(2, round(w / 2)),
                         y - 2,
                         random.randint(1, round(w / 6)) * 2,
                         2,
@@ -324,7 +325,6 @@ def recieve(message):
         pass #TODO: login using GameJolt API
     elif data[0] == msg.win:
         assert game
-        assert player.timer > TICK_SEC * 4
         assert distance(player.x, player.y, game.goal.x, game.goal.y) < 100
         if player.win == None:
             player.win = Win(game, player, player.timer)
@@ -335,6 +335,9 @@ def recieve(message):
     elif data[0] == msg.game:
         assert player not in waitqueue
         waitqueue.append(player)
+    elif data[0] == msg.dead:
+        assert game != None
+        player.timer = 0
 
 @sock.on("connect")
 def connect():

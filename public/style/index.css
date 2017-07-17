@@ -39,6 +39,9 @@ body {
 	z-index: 2;
 	margin: 0;
 }
+#i.landscape {
+	left: 0;
+}
 
 .platform {
 	position: absolute;
@@ -114,8 +117,11 @@ body {
 	animation: none;
 }
 
-/* Leaderboard */
 
+
+
+
+/* Leaderboard */
 .leaderboard {
 	position: absolute;
 	background: #334143;
@@ -126,45 +132,53 @@ body {
 	top: 10vh;
 	color: #B8D8D8;
 	font-size: calc(2vw + 2vh);
+	cursor: default;
 }
-
-th,
-td {
+.leaderboard.landscape {
+	width: 100vh;
+	height: 100vw;
+	left: 0;
+	top: 0;
+	border-radius: 0;
+}
+table {
+	border-collapse: collapse;
+	margin: 1pc;
+}
+.landscape table {
+	margin-right: 15vh;
+}
+th, td {
 	width: 10%;
 	text-align: center;
 	padding: 0;
 }
 tr.dnf {
-	color: #7A9E9F;
+	color: #566F70;
 }
 tr.me {
 	color: #EEF5DB;
 }
-
-th:nth-child(1),
-td:nth-child(1) {
+th:nth-child(1), td:nth-child(1) {
 	width: 1%;
-	/* border-left: 1pc; */
 }
-
+th:nth-child(2), td:nth-child(2) {
+	width: 5%;
+}
 tr:nth-child(odd) {
 	background: rgba(0, 0, 0, 0.2);
 	/* border: #3C4C4F 2pc; */
 }
-
-table {
-	border-collapse: collapse;
-	margin: 1pc;
-}
-
 th {
 	height: 6pc;
 	text-decoration: underline;
 }
 
+/* Special Buttons */
 .nextbutton {
-	width: 3pc;
-	height: 3pc;
+	position: fixed;
+	width: calc(4vw + 4vh);
+	height: calc(4vw + 4vh);
 	background-color: #293436;
 	transition: background-color 0.2s;
 	border-radius: 1pc;
@@ -174,10 +188,34 @@ th {
 	background-origin: content-box;
 	background-repeat: no-repeat;
 	float: right;
-	margin-right: .5pc;
 	cursor: pointer;
+	right: 1pc;
+	bottom: 1pc;
+}
+.nextbutton:hover {
+	background-color: #334143;
+}
+.landscape .nextbutton {
+	width: calc(6vw + 6vh);
+	height: calc(6vw + 6vh);
+	right: 4pc;
+	bottom: 1pc;
 }
 
-.nextbutton:hover {
-	background-color: #b8d8d8;
+/* Helpers */
+.landscape {
+	transform: rotate(90deg) translate(0, -100vw);
+	transform-origin: 0 0;
 }
+
+
+/* REFERENCE */
+
+/* darker background: #293436 */
+/* dark background: #334143 */
+/* background: #3C4C4F */
+/* nearly backg: #566F70 */
+/* midground: #7A9E9F */
+/* foreground: #B8D8D8 */
+/* highlight: #EEF5DB */
+/* bad stuff: #FE5F55 */

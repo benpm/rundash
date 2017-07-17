@@ -12,7 +12,7 @@
 	<!-- Supports all browsers (even IE). Does not require canvas or WebGL -->
 
 	<!-- Game UI -->
-	<div class="leaderboard">
+	<div class="leaderboard" style="display: none;">
 		<table>
 			<tbody>
 				<tr id="header">
@@ -25,10 +25,10 @@
 		<div class="nextbutton" onclick="game.setstatus('newgame');"></div>
 	</div>
 	<img src="img/loading.svg" class="loading">
-	<img src="img/ex.svg" class="loading disconnected">
-	<p style="color:#7A9E9F" id="i">information</p>
+	<img src="img/ex.svg" class="loading disconnected" style="display: none;">
+	<p style="color:#7A9E9F" id="i"></p>
 	
-	<div id="game">
+	<div id="game" style="display: none;">
 
 		<!-- Audio -->
 		<audio id="jump" src="audio/jump.mp3" type="audio/mp3" preload="auto"></audio>
