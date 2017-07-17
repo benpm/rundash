@@ -163,13 +163,21 @@ $(document).on("touchend", function (event) {
 		touch.lefthold = false;
 	}
 });
-$(document).on("touchmove", function () {
-	console.log("move");
+$(document).on("touchmove", function () { 
+	touch.righthold = touch.lefthold = false;
+	var x = event.clientX;
+	var y = event.clientY;
+	if ((cam.rot && y > window.innerWidth / 2)
+		|| (!cam.rot && x > window.innerWidth / 2))
+		touch.righthold = true;
+	else
+		touch.lefthold = true;
 });
 
 const address = location.href;
 const sock = io.connect(address);
 const sp = sprintf;
+const body = $(document.body)
 const gbody = $("#game");
 const login = $("#login");
 const infoelem = $("#i");
@@ -242,7 +250,7 @@ sock.on("msg", function (message) {
 			game.setstatus("game");
 			stage.create(info.data);
 			for (var i = 0; i < info.players; i++) {
-				if (i != player.gid) new Actor("friend", 2, 8, 3, 3, ":|", "", i);
+				if (i != player.gid) new Actor("friend", 0, 0, 65, 65, ":|", "", i);
 			}
 			break;
 		case msg.update:
@@ -526,14 +534,15 @@ const cam = {
 		gbody.css(
 			"transform",
 			sp(
-				"%s scale(%.2f, %.2f) translate(%.2fpc, %.2fpc)",
-				this.rot ? "rotate(90deg)" : "",
+				"%s scale(%.2f, %.2f) translate(%dpx, %dpx)",
+				/* this.rot ? "rotate(90deg)" :  */"",
 				this.zoomlvl,
 				this.zoomlvl,
-				this.rot ? -this.x - ((window.innerWidth / this.zoomlvl) / 32) +
-				((window.innerHeight / this.zoomlvl) / 32) : -this.x,
-				this.rot ? -this.y - ((window.innerHeight / this.zoomlvl) / 32) -
-				((window.innerWidth / this.zoomlvl) / 32) : -this.y
+				/* this.rot ? -this.x - ((window.innerWidth / this.zoomlvl) / 32) +
+				((window.innerHeight / this.zoomlvl) / 32) : -this.x, */
+				-this.x, -this.y
+				/* this.rot ? -this.y - ((window.innerHeight / this.zoomlvl) / 32) -
+				((window.innerWidth / this.zoomlvl) / 32) : -this.y */
 			)
 		);
 	},
@@ -545,13 +554,15 @@ const cam = {
 		this.reset();
 		if (rotchange) {
 			if (this.rot) {
-				leaderboard.addClass("landscape");
-				infoelem.addClass("landscape");
-				login.addClass("landscape");
+				body.addClass("landscape");
+				//leaderboard.addClass("landscape");
+				//infoelem.addClass("landscape");
+				//login.addClass("landscape");
 			} else {
-				leaderboard.removeClass("landscape");
-				infoelem.removeClass("landscape");
-				login.removeClass("landscape");
+				body.removeClass("landscape");
+				//leaderboard.removeClass("landscape");
+				//infoelem.removeClass("landscape");
+				//login.removeClass("landscape");
 			}
 		}
 	},
@@ -564,14 +575,16 @@ const cam = {
 		this.y = this.fy();
 	},
 	fx: function () {
-		return this.target.x + this.target.w / 2 - ((window.innerWidth / this.zoomlvl) / 32);
+		return this.target.x + this.target.w / 2 - (
+			(this.rot ? window.innerHeight : window.innerWidth) / this.zoomlvl / 2);
 	},
 	fy: function () {
-		return this.target.y + this.target.h / 2 - ((window.innerHeight / this.zoomlvl) / 32);
+		return this.target.y + this.target.h / 2 - (
+			(this.rot ? window.innerWidth : window.innerHeight) / this.zoomlvl / 2);
 	}
 };
 var ticks = 0;
-var player = new Actor("player", 2, 8, 3, 3, ":)");
+var player = new Actor("player", 0, 0, 65, 65, ":)");
 
 //Constructor Objects
 function Prop(type, x, y, w, h, text) {
@@ -586,7 +599,7 @@ function Prop(type, x, y, w, h, text) {
 	//Initialize
 	var dom = $("<div>", {
 		class: type,
-		style: sp("left:%dpc;top:%dpc;width:%dpc;height:%dpc;",
+		style: sp("left:%dpx;top:%dpx;width:%dpx;height:%dpx;",
 			this.x, this.y, this.w, this.h),
 		text: text || ""
 	});
@@ -603,8 +616,8 @@ function Actor(type, x, y, w, h, face, sid, gid) {
 	//Properties
 	this.x = x || 0;
 	this.y = y || 0;
-	this.w = w || 2;
-	this.h = h || 2;
+	this.w = w || 30;
+	this.h = h || 30;
 	this.vx = 0;
 	this.vy = 0;
 	this.dx = 0;
@@ -623,7 +636,7 @@ function Actor(type, x, y, w, h, face, sid, gid) {
 	//Initialize
 	var dom = $("<div>", {
 		class: type,
-		style: sp("width:%dpc;height:%dpc;", w, h),
+		style: sp("width:%dpx;height:%dpx;", w, h),
 		text: face
 	});
 	gbody.append(dom);
@@ -636,11 +649,11 @@ function Actor(type, x, y, w, h, face, sid, gid) {
 		dom.css(
 			"transform",
 			sp(
-				"translate(%.2fpc, %.2fpc) scale(%.2f, %.2f) rotate(%.2fdeg)",
+				"translate(%dpx, %dpx) scale(%.2f, %.2f) rotate(%.2fdeg)",
 				this.x, this.y,
-				1 + Math.abs(this.dx / 3),
-				1 + Math.abs(this.dy / 3),
-				90 + this.dx * 15
+				1 + Math.abs(this.dx / 100),
+				1 + Math.abs(this.dy / 100),
+				this.dx
 			)
 		);
 	};
@@ -648,21 +661,21 @@ function Actor(type, x, y, w, h, face, sid, gid) {
 		switch (this.type) {
 			case "player":
 				this.vx /= 2;
-				if (input.right()) this.vx += 0.25;
-				if (input.left()) this.vx -= 0.25;
+				if (input.right()) this.vx += 4;
+				if (input.left()) this.vx -= 4;
 				if (this.canjump && input.jump()) {
-					this.vy = -0.72;
+					this.vy = -11.5;
 					audio.jump.play();
 					this.canjump = false;
 				}
-				this.vy += 0.04;
-				if (this.y > 64) this.die();
+				this.vy += 0.64;
+				if (this.y > 1000) this.die();
 				this.dx = this.vx;
 				this.dy = this.vy;
 				this.move(this.vx, this.vy);
 				var spd = this.vy;
 				var coll = collision(this);
-				if (spd > 0.1 && this.vy === 0 && coll & BOTTOM) {
+				if (spd > 1.5 && this.vy === 0 && coll & BOTTOM) {
 					audio.land.play();
 				}
 				if (coll & BOTTOM) {
@@ -677,8 +690,8 @@ function Actor(type, x, y, w, h, face, sid, gid) {
 				)
 				this.dx = lerp(this.dx, this.npos[0] - this.x, 0.5);
 				this.dy = lerp(this.dy, this.npos[1] - this.y, 0.5);
-				this.dx = Math.abs(this.dx) > 1.5 ? 0 : this.dx;
-				this.dy = Math.abs(this.dy) > 1.5 ? 0 : this.dy;
+				this.dx = Math.abs(this.dx) > 10 ? 0 : this.dx;
+				this.dy = Math.abs(this.dy) > 10 ? 0 : this.dy;
 				this.x = this.npos[0];
 				this.y = this.npos[1];
 				this.move(0, 0);
@@ -687,7 +700,7 @@ function Actor(type, x, y, w, h, face, sid, gid) {
 	};
 	this.die = function () {
 		if (this.type == "player") send(msg.dead, { x: this.x, y: this.y });
-		new Prop("grave", this.x - this.vx, this.y - this.vy, 4, 3, ":(");
+		new Prop("grave", this.x - this.vx, this.y - this.vy, 60, 80, ":(");
 		this.vx = this.vy = 0;
 		this.x = 2;
 		this.y = 6;

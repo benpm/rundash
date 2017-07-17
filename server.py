@@ -9,20 +9,27 @@ import msgpack
 import gzip
 import json
 
+
 # Helper functions
 def pack(obj):
     "Packs any object using msgpack"
     return msgpack.packb(obj)
 
+
 def unpack(msg):
     "Unpacks a websocket message"
     return msgpack.unpackb(bytearray(msg["data"]))
 
+
 def send(recipient, msgtype, data):
     "Sends a message (to a room or a single client's SID)"
-    sock.emit("msg", {"data": pack([msgtype, data])}, room=recipient, namespace="/")
+    sock.emit(
+        "msg", {"data": pack([msgtype, data])}, room=recipient, namespace="/")
+
+
 def distance(x1, y1, x2, y2):
     return sqrt((y2 - y1)**2 + (x2 - x1)**2)
+
 
 # Setup server app
 app = flask.Flask(__name__, static_url_path="/public")
@@ -34,7 +41,8 @@ waitqueue = []
 maxgames = 10
 sock = io.SocketIO(app)
 
-# Setup game globals
+# Globals
+GRID = 10
 TICK_SEC = 20
 TICK = 1 / TICK_SEC
 GAME_TICKS = TICK_SEC * 60
@@ -99,7 +107,8 @@ class Game(object):
         send(self.room, msg.game, {
             "number": self.num,
             "players": len(self.players),
-            "data": self.compressed})
+            "data": self.compressed
+        })
         print(self.title, "started")
 
     def stop(self):
@@ -117,12 +126,13 @@ class Game(object):
                 wins.append({
                     "name": player.name,
                     "sid": player.sid,
-                    "time": player.win.time})
+                    "time": player.win.time
+                })
 
         # Sort wins
         for i in range(1, len(wins)):
             j = i
-            while j > 0 and wins[j-1]["time"] > wins[j]["time"]:
+            while j > 0 and wins[j - 1]["time"] > wins[j]["time"]:
                 temp = wins[j]
                 wins[j] = wins[j - 1]
                 wins[j - 1] = temp
@@ -134,7 +144,8 @@ class Game(object):
                 wins.append({
                     "name": player.name,
                     "sid": player.sid,
-                    "time": 0})
+                    "time": 0
+                })
             self.removeplayer(player, goodbye=False)
 
         # Stop game
@@ -188,40 +199,28 @@ class Game(object):
         # Static file serving
     def generate(self):
         # Starting platform
-        self.props.append(Prop(-8, 8, 16, 2, "platform"))
-
-        # Add platforms
-        y = 8
-        w = 0
-        for i in range(5):
-            y += random.randint(-4, 4)
-            w = random.randint(6, 14)
-            self.props.append(Prop(10 + i * 16, y, w, 2, "platform"))
-            if random.random() < 0.5:
-                self.props.append(
-                    Prop(
-                        10 + i * 16 + random.randint(2, round(w / 2)),
-                        y - 2,
-                        random.randint(1, round(w / 6)) * 2,
-                        2,
-                        "spike"))
+        self.props.append(Prop(-10, 10, 10, 4, "platform"))
 
         # Goal
-        self.goal = Prop(5 * 16 + w + 2, y - 16, 2, 16, "platform goal")
+        self.goal = Prop(12, -10, 10, 4, "platform goal")
         self.props.append(self.goal)
 
         # Compress
         self.compress()
+
     def compress(self):
         props = [prop.asdict() for prop in self.props]
         self.compressed = json.dumps({"props": props})
+
+
 class Prop(object):
     "Static object on stage. Position example: [x, y]; and size: [width, height]."
+
     def __init__(self, x, y, w, h, proptype):
-        self.x = x
-        self.y = y
-        self.width = w
-        self.height = h
+        self.x = x * GRID
+        self.y = y * GRID
+        self.width = w * GRID
+        self.height = h * GRID
         self.type = proptype
 
     def update(self, x, y):
@@ -235,13 +234,17 @@ class Prop(object):
             "x": self.x,
             "y": self.y,
             "w": self.width,
-            "h": self.height}
+            "h": self.height
+        }
+
+
 class Actor(object):
     "Character"
+
     def __init__(self, x, y):
         # Position
-        self.x = x
-        self.y = y
+        self.x = x * GRID
+        self.y = y * GRID
         # Velocity
         self.vx = 0
         self.vy = 0
@@ -256,6 +259,7 @@ class Actor(object):
         self.y = y
         self.vx = vx
         self.vy = vy
+
 
 class Player(Actor):
     def __init__(self, sid, x, y, room="lobby"):
@@ -291,8 +295,10 @@ class Player(Actor):
             io.join_room(value, self.sid, "/")
         self._room = value
 
+
 class Win(object):
     "Represents a win in a game"
+
     def __init__(self, game, player, time):
         self.game = game
         self.time = time
@@ -302,16 +308,21 @@ class Win(object):
         return {
             "name": self.player.name,
             "time": floor(self.time / TICK_SEC),
-            "sid": self.player.sid}
+            "sid": self.player.sid
+        }
+
+# Root serving
 @app.route("/")
 def index():
     return flask.send_file("./public/index.html")
 
+# Static file serving
 @app.route("/<path:path>")
 def sendfile(path):
     return flask.send_from_directory("public", path)
 
-# Websocket functionality
+
+# Websocket recieve
 @sock.on("msg")
 def recieve(message):
     "Recieve a message from a client"
@@ -329,7 +340,7 @@ def recieve(message):
         waitqueue.append(player)
     elif data[0] == msg.win:
         assert game
-        assert distance(player.x, player.y, game.goal.x, game.goal.y) < 100
+        assert distance(player.x, player.y, game.goal.x, game.goal.y) < 750
         if player.win == None:
             player.win = Win(game, player, player.timer)
         elif player.win.time > player.timer:
@@ -343,6 +354,7 @@ def recieve(message):
         assert game != None
         player.timer = 0
 
+# Websocket connect
 @sock.on("connect")
 def connect():
     "New connected client"
@@ -352,6 +364,7 @@ def connect():
     player.send(msg.init, {"sid": sid})
     #waitqueue.append(player)
 
+# Websocket disconnect
 @sock.on("disconnect")
 def disconnect():
     "Client disconnected"
@@ -366,6 +379,7 @@ def disconnect():
     io.leave_room(player.room)
     players.pop(player.sid)
 
+# Main game loop
 def gameloop():
     "The main game loop"
     dtick = 0
@@ -404,6 +418,7 @@ def gameloop():
         dtick = time.clock() - dtick
         if dtick < TICK: sock.sleep(TICK - dtick)
 
+# Begin
 if __name__ == "__main__":
     print("[SERVER]", "starting...")
     gamethread = sock.start_background_task(gameloop)
