@@ -118,7 +118,99 @@ body {
 }
 
 
-
+/* Login */
+*::selection {
+	background: #7A9E9F;
+}
+body {
+	font-family: "Quicksand";
+	background: #3C4C4F;
+}
+#login {
+	position: absolute;
+	background: #334143;
+	border-radius: 2pc;
+	width: 80vw;
+	height: 80vh;
+	left: 10vw;
+	top: 10vh;
+	color: #B8D8D8;
+	font-size: calc(2vw + 2vh);
+}
+#login form {
+	padding: 4pc;
+}
+#login form input {
+	padding: 1pc 0 1pc 0pc;
+	background: #293436;
+	border: solid 4px transparent;
+	border-radius: 3pc;
+	width: 100%;
+	font-family: "Quicksand";
+	font-size: calc(2vw + 2vh);
+	text-align: center;
+	color: #B8D8D8;
+}
+#login form input:focus {
+	outline: none;
+	border: solid 4px #566F70;
+	border-collapse: collapse;
+}
+#login form button {
+	position: absolute;
+	bottom: calc(2vw + 2vh);
+	width: calc(5vw + 5vh);
+	height: calc(5vw + 5vh);
+	background-color: #7A9E9F;
+	transition: background-color 0.1s linear;
+	border: none;
+	border-radius: 1pc;
+	cursor: pointer;
+}
+#login form button::after {
+	content: "";
+	background-image: url("../img/exblack.svg");
+	background-repeat: no-repeat;
+	background-position: center;
+	background-size: 65%;
+	opacity: 0.3;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	right: 0;
+	position: absolute;
+	z-index: 1;
+}
+#login form button[name=submit] {
+	right: calc(2vw + 2vh);
+}
+#login form button[name=submit]::after {
+	background-image: url("../img/check.svg");
+}
+#login form button:focus {
+	outline: none;
+}
+#login form button[name=clear]:hover {
+	background-color: #FE5F55;
+}
+#login form button[name=submit]:hover {
+	background-color: #EEF5DB;
+}
+#login.landscape {
+	width: 100vh;
+	height: 100vw;
+	left: 0;
+	top: 0;
+	border-radius: 0;
+}
+#login.landscape form button {
+	width: calc(8vw + 8vh);
+	height: calc(8vw + 8vh);
+}
+#login.landscape form input {
+	padding: 4pc 0 4pc 0pc;
+	font-size: calc(4vw + 4vh);
+}
 
 
 /* Leaderboard */

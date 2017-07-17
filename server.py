@@ -78,7 +78,7 @@ class Game(object):
             "x": self.spawnx,
             "y": self.spawny
         })
-        print(self.title, "added player")
+        print(self.title, player.name, "joined")
         self.players.append(player)
 
     def removeplayer(self, player, goodbye=True):
@@ -87,7 +87,7 @@ class Game(object):
             if goodbye:
                 send(self.room, msg.leave, {"index": player.gindex})
                 self.players.remove(player)
-            print(self.title, "removed", player.gindex)
+            print(self.title, player.name, "exited")
             player.room = "lobby"
             player.game = None
             player.gindex = -1
@@ -322,7 +322,11 @@ def recieve(message):
     if data[0] == msg.update:
         player.update(info[b"x"], info[b"y"], info[b"vx"], info[b"vy"])
     elif data[0] == msg.login:
-        pass #TODO: login using GameJolt API
+        #TODO: login using GameJolt API
+        assert player not in waitqueue
+        assert game == None
+        player.name = info.decode() if len(info) > 0 else player.name
+        waitqueue.append(player)
     elif data[0] == msg.win:
         assert game
         assert distance(player.x, player.y, game.goal.x, game.goal.y) < 100
@@ -346,13 +350,13 @@ def connect():
     print("[SERVER]", "connection:", flask.request.referrer)
     players[sid] = player = Player(sid, 2, 8, "lobby")
     player.send(msg.init, {"sid": sid})
-    waitqueue.append(player)
+    #waitqueue.append(player)
 
 @sock.on("disconnect")
 def disconnect():
     "Client disconnected"
     player = players[flask.request.sid]
-    print("[SERVER]", "disconnection:", flask.request.referrer)
+    print("[SERVER]", player.name, "disconnected")
     if player.game:
         # Remove player from their game
         player.game.removeplayer(player)

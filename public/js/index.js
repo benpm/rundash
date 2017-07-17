@@ -151,9 +151,10 @@ $(document).on("touchstart", function (event) {
 	if (touch.righthold || touch.lefthold) {
 		touch.right = true;
 	}
-	//var x = event.touches[0].clientX;
+	var x = event.touches[0].clientX;
 	var y = event.touches[0].clientY;
-	if (y > window.innerWidth / 2) touch.righthold = true;
+	if ((cam.rot && y > window.innerWidth / 2)
+		|| (!cam.rot && x > window.innerWidth / 2)) touch.righthold = true;
 	else touch.lefthold = true;
 });
 $(document).on("touchend", function (event) {
@@ -170,6 +171,7 @@ const address = location.href;
 const sock = io.connect(address);
 const sp = sprintf;
 const gbody = $("#game");
+const login = $("#login");
 const infoelem = $("#i");
 const leaderboard = $(".leaderboard");
 const leaderbplace = $(".leaderboard p#placement");
@@ -233,6 +235,7 @@ sock.on("msg", function (message) {
 			console.log("initialized");
 			player.sid = info.sid;
 			cam.target = player;
+			game.setstatus("login");
 			break;
 		case msg.game:
 			console.log("game %d started", info.number);
@@ -462,9 +465,16 @@ const game = (function () {
 					leaderboard.hide();
 					gbody.hide()
 					break;
+				case "login":
+					cam.zoom();
+					$(".loading").hide();
+					$(".disconnected").hide();
+					login.show();
+					break;	
 				case "lobby":
 					$(".loading").show();
 					$(".disconnected").hide();
+					login.hide();
 					infoelem.hide();
 					gbody.hide();
 					stage.clear();
@@ -513,7 +523,6 @@ const cam = {
 	speed: 0.1,
 	update: function () {
 		if (this.target) this.follow();
-		window.scrollTo(0, 0);
 		gbody.css(
 			"transform",
 			sp(
@@ -538,9 +547,11 @@ const cam = {
 			if (this.rot) {
 				leaderboard.addClass("landscape");
 				infoelem.addClass("landscape");
+				login.addClass("landscape");
 			} else {
 				leaderboard.removeClass("landscape");
 				infoelem.removeClass("landscape");
+				login.removeClass("landscape");
 			}
 		}
 	},
