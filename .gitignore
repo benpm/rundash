@@ -1,4 +1,5 @@
 .vscode
+__pychache__
 *.pyc
 .eslintrc.json
 jsconfig.json
