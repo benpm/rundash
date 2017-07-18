@@ -216,7 +216,6 @@ class Game(object):
         self.props.append(Prop(x, y, w, h, "platform"))
         self.props.append(Prop(-1000, 110, 2000, h, "platform"))
         self.props.append(Prop(-1000, 110 - 5, 2000, 5, "spike"))
-
         
         num_platforms = random.randint(7, 15)
         for i in range(0, num_platforms):
@@ -243,7 +242,7 @@ class Game(object):
             if w > 13 and random.random() < 0.6:
                 self.props.append(
                     Prop(
-                        x + random.randrange(2, round(w / 2), 5),
+                        x + random.randrange(3, round(w / 2), 5) + random.random(),
                         y - 5,
                         5,
                         5,
@@ -257,7 +256,6 @@ class Game(object):
                         5,
                         "spike"))
 
-
             print("-----------------------------------")
             print("Platform {} to platform {} stats:".format(i, i + 1))
             print("Normalized x: {}".format(norm_x))
@@ -267,7 +265,7 @@ class Game(object):
             print("Distance: {}".format(prev_dist))
                 
         # Goal
-        self.goal = Prop(x + 30 + w, y - 20, 2, 16, "platform goal")
+        self.goal = Prop(x + 30 + w, y - 20, 4, 16, "platform goal")
         self.props.append(self.goal)
 
         # Compress
