@@ -1,6 +1,5 @@
 from math import *
 import string
-import random
 import time
 from enum import IntEnum as enum
 import flask
@@ -49,15 +48,14 @@ msg = enum("msg", "join leave game update login init endgame win dead")
 class Game(object):
     def __init__(self):
         self.num = len(games)
-        self.room = "game_%d" % self.num
-        self.title = "[GAME %d]" % self.num
+        self.room = "game_{}".format(self.num)
+        self.title = "[GAME {}]".format(self.num)
         self.players = []
         self.started = False
         self.ttl = TTL
         self.gametime = 0
         self.actors = []
         self.timer = GAME_TICKS
-        self.compressed = None
         self.level = Level("horizontal")
         self.level.props
         games.append(self)
@@ -188,8 +186,6 @@ class Game(object):
                 player.timer += 1
 
             return True
-
-        # Static file serving
 
 class Actor(object):
     "Character"

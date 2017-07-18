@@ -9,14 +9,14 @@ class Level(object):
     GRID = 10
     def __init__(self, type_, grid = 10):
         self.GRID = grid
-        
+
+        self.spawnx = 0
+        self.spawny = 0
+
         if type_ is "horizontal":
             self.props = []
             self.generate_horizontal()
 
-        self.spawnx = 0
-        self.spawny = 0
-        
     def generate_horizontal(self):
         # Prop (x, y, w, h, proptype)
         # Prop types: "platform", "goal", "spike"
