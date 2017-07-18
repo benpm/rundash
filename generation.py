@@ -38,7 +38,7 @@ class Level(object):
         self.props.append(Prop(-1000, 110, 2000, h, "platform"))
         self.props.append(Prop(-1000, 110 - 5, 2000, 5, "spike"))
         
-        num_platforms = random.randint(1, 15)
+        num_platforms = random.randint(7, 15)
         for i in range(0, num_platforms):
             plat_vert_sign = random.choice([1, -1, -1])
 
