@@ -1,6 +1,5 @@
 from math import *
 import string
-import random
 import time
 from enum import IntEnum as enum
 import flask
@@ -8,28 +7,24 @@ import flask_socketio as io
 import msgpack
 import gzip
 import json
-
+from generation import Level, Prop
 
 # Helper functions
 def pack(obj):
     "Packs any object using msgpack"
     return msgpack.packb(obj)
 
-
 def unpack(msg):
     "Unpacks a websocket message"
     return msgpack.unpackb(bytearray(msg["data"]))
-
 
 def send(recipient, msgtype, data):
     "Sends a message (to a room or a single client's SID)"
     sock.emit(
         "msg", {"data": pack([msgtype, data])}, room=recipient, namespace="/")
 
-
 def distance(x1, y1, x2, y2):
     return sqrt((y2 - y1)**2 + (x2 - x1)**2)
-
 
 # Setup server app
 app = flask.Flask(__name__, static_url_path="/public")
@@ -53,20 +48,16 @@ msg = enum("msg", "join leave game update login init endgame win dead")
 class Game(object):
     def __init__(self):
         self.num = len(games)
-        self.room = "game_%d" % self.num
-        self.title = "[GAME %d]" % self.num
+        self.room = "game_{}".format(self.num)
+        self.title = "[GAME {}]".format(self.num)
         self.players = []
         self.started = False
         self.ttl = TTL
         self.gametime = 0
-        self.props = []
         self.actors = []
-        self.spawnx = 0
-        self.spawny = 0
         self.timer = GAME_TICKS
-        self.goal = None
-        self.compressed = None
-        self.generate()
+        self.level = Level("horizontal")
+        self.level.props
         games.append(self)
         print(self.title, "created")
 
@@ -79,12 +70,12 @@ class Game(object):
         player.game = self
         player.gindex = len(self.players)
         player.room = self.room
-        player.update(self.spawnx, self.spawny, 0, 0)
+        player.update(self.level.spawnx, self.level.spawny, 0, 0)
         player.send(msg.join, {
             "number": self.num,
             "gid": player.gindex,
-            "x": self.spawnx,
-            "y": self.spawny
+            "x": self.level.spawnx,
+            "y": self.level.spawny
         })
         print(self.title, player.name, "joined")
         self.players.append(player)
@@ -107,7 +98,7 @@ class Game(object):
         send(self.room, msg.game, {
             "number": self.num,
             "players": [{"name": p.name, "gid": p.gindex} for p in self.players],
-            "data": self.compressed
+            "data": self.level.compressed
         })
         print(self.title, "started")
 
@@ -195,113 +186,6 @@ class Game(object):
                 player.timer += 1
 
             return True
-
-        # Static file serving
-    def generate(self):
-        # Prop (x, y, w, h, proptype)
-        # Prop types: "platform", "goal", "spike"
-        max_x = 36
-        min_x = 10
-
-        max_y_up = 8
-        max_y_down = 10
-        min_y = 0
-
-        x = -7
-        y = 10
-        w = 20
-        h = 4
-
-        # Starting platform     
-        self.props.append(Prop(x, y, w, h, "platform"))
-        self.props.append(Prop(-1000, 110, 2000, h, "platform"))
-        self.props.append(Prop(-1000, 110 - 5, 2000, 5, "spike"))
-        
-        num_platforms = random.randint(7, 15)
-        for i in range(0, num_platforms):
-            plat_vert_sign = random.choice([1, -1, -1])
-
-            delta_x = random.uniform(min_x, max_x)
-            norm_x = self.normalize(delta_x, max_x, min_x)
-
-            if plat_vert_sign == 1:
-                delta_y = (1.8 - norm_x) * random.uniform(8, 10)
-            else:
-                delta_y = (1.12 - norm_x) * random.uniform(8, 10)
-
-            delta_y *= plat_vert_sign
-            prev_dist = distance(x + w, y + w, x + delta_x, y + delta_y)
-
-            x += delta_x + w
-            y += delta_y
-
-            w = random.uniform(10, 30)
-            self.props.append(Prop(x, y, w, h, "platform"))
-            
-            # Need to base spike probability on normalized values
-            if w > 13 and random.random() < 0.6:
-                self.props.append(
-                    Prop(
-                        x + random.randrange(3, round(w / 2), 5) + random.random(),
-                        y - 5,
-                        5,
-                        5,
-                        "spike"))
-            if w > 25 and random.random() < 0.5:
-                self.props.append(
-                    Prop(
-                        x + random.randrange(round(w / 2), round(w * .8), 5),
-                        y - 5,
-                        5,
-                        5,
-                        "spike"))
-
-            print("-----------------------------------")
-            print("Platform {} to platform {} stats:".format(i, i + 1))
-            print("Normalized x: {}".format(norm_x))
-            # print("Normalized y: {}".format(norm_y))
-            print("Delta_x: {}".format(delta_x))
-            print("Delta_y: {}".format(delta_y))
-            print("Distance: {}".format(prev_dist))
-                
-        # Goal
-        self.goal = Prop(x + 30 + w, y - 20, 4, 16, "platform goal")
-        self.props.append(self.goal)
-
-        # Compress
-        self.compress()
-
-    def compress(self):
-        props = [prop.asdict() for prop in self.props]
-        self.compressed = json.dumps({"props": props})
-
-    def normalize(self, given, max_, min_):
-        return (given - min_)/(max_ - min_)
-
-class Prop(object):
-    "Static object on stage. Position example: [x, y]; and size: [width, height]."
-
-    def __init__(self, x, y, w, h, proptype):
-        self.x = x * GRID
-        self.y = y * GRID
-        self.width = w * GRID
-        self.height = h * GRID
-        self.type = proptype
-
-    def update(self, x, y):
-        self.x = x
-        self.y = y
-
-    def asdict(self):
-        "Returns self as dictionary object, useful for serialization"
-        return {
-            "type": self.type,
-            "x": self.x,
-            "y": self.y,
-            "w": self.width,
-            "h": self.height
-        }
-
 
 class Actor(object):
     "Character"
@@ -405,7 +289,7 @@ def recieve(message):
         waitqueue.append(player)
     elif data[0] == msg.win:
         assert game
-        assert distance(player.x, player.y, game.goal.x, game.goal.y) < 750
+        assert distance(player.x, player.y, game.level.goal.x, game.level.goal.y) < 750
         if player.win == None:
             player.win = Win(game, player, player.timer)
         elif player.win.time > player.timer:
