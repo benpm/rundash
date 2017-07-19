@@ -106,7 +106,7 @@ class Game(object):
         self.gametime = 20 * 60
         send(self.room, msg.game, {
             "number": self.num,
-            "players": len(self.players),
+            "players": [{"name": p.name, "gid": p.gindex} for p in self.players],
             "data": self.compressed
         })
         print(self.title, "started")

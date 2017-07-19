@@ -120,6 +120,7 @@ const keyboard = {
 $(document).keydown(function (event) {
 	keyboard.keys[keyboard.keymap[event.key.toLowerCase()]] = 1;
 	keyboard.keyspressed[keyboard.keymap[event.key.toLowerCase()]] = 1;
+	input.anykey = true;
 });
 $(document).keyup(function (event) {
 	keyboard.keys[keyboard.keymap[event.key.toLowerCase()]] = 0;
@@ -145,7 +146,8 @@ const input = {
 	},
 	left: function () {
 		return keyboard.down("left", "a") || touch.lefthold;
-	}
+	},
+	anykey: false
 };
 $(document).on("touchstart", function (event) {
 	if (touch.righthold || touch.lefthold) {
@@ -188,6 +190,8 @@ const BOTTOM = 1;
 const TOP = 2;
 const LEFT = 4;
 const RIGHT = 8;
+const eyes = [":", ";", "8", "B"];
+const mouths = ["}", "]", ")", "(", "[", "{", "|", "\\", ">", "&", "L", "I", "D", "3", "1", "P", "B", "S"];
 const msg = {
 	join: 1,
 	leave: 2,
@@ -249,8 +253,10 @@ sock.on("msg", function (message) {
 			console.log("game %d started", info.number);
 			game.setstatus("game");
 			stage.create(info.data);
-			for (var i = 0; i < info.players; i++) {
-				if (i != player.gid) new Actor("friend", 0, 0, 65, 65, ":|", "", i);
+			for (var i = 0; i < info.players.length; i++) {
+				if (info.players[i].gid != player.gid) new Actor(
+					"friend", 0, 0, 65, 65,
+					info.players[i].name, "", info.players[i].gid);
 			}
 			break;
 		case msg.update:
@@ -409,27 +415,13 @@ var stage = {
 		}
 	},
 	create: function (data) {
-		/* var y = 16;
-		for (var i = 0; i < 16; i++) {
-			y = Math.round(y + (Math.random() - 0.5) * 8);
-			var w = Math.round(4 + Math.random() * 4) * 2;
-			new Prop("platform", i * 16, y, w, 2);
-			if (i == 15) new Prop("platform goal", i * 16 + w + 2, y - 8, 2, 8);
-			if (Math.random() < 0.5 && i > 1) new Prop("spike", i * 16 + 4, y - 2, Math.round(w / 6) * 2);
-		}
-		new Prop("spike", 2, 44, 302, 2);
-		new Prop("platform", 0, 0, 2, 48);
-		new Prop("platform", -2, 46, 302, 2); */
-		/* new Prop("platform", -10, 16, 20, 8);
-		var str = pako.inflate(data, {to: "string"});
-		console.log(str); */
 		var props = JSON.parse(data).props;
 		for (var i = 0; i < props.length; i++) {
 			new Prop(props[i].type,
-				props[i].x,
-				props[i].y,
-				props[i].w,
-				props[i].h);
+				Math.floor(props[i].x),
+				Math.floor(props[i].y),
+				Math.floor(props[i].w),
+				Math.floor(props[i].h));
 		}
 	},
 	findByIndex: function (gid) {
@@ -478,6 +470,8 @@ const game = (function () {
 					$(".loading").hide();
 					$(".disconnected").hide();
 					login.show();
+					gbody.show();
+					cam.reset();
 					break;	
 				case "lobby":
 					$(".loading").show();
@@ -509,6 +503,7 @@ const game = (function () {
 				case "disconnected":
 					$(".loading").hide();
 					$(".disconnected").show();
+					login.hide();
 					gbody.hide();
 					infoelem.hide();
 					leaderboard.hide();
@@ -552,6 +547,7 @@ const cam = {
 		rotchange = (rotchange != this.rot);
 		this.zoomlvl = ((window.innerWidth + window.innerHeight) / (1280 + 720)) + (this.rot ? 0.3 : 0);
 		this.zoomlvl *= 0.7;
+		if (game.status == "login") this.zoomlvl *= 3;
 		this.reset();
 		if (rotchange) {
 			if (this.rot) {
@@ -574,6 +570,8 @@ const cam = {
 	reset: function () {
 		this.x = this.fx();
 		this.y = this.fy();
+		if (game.status == "login") this.y *= 1.5;
+		this.update();
 	},
 	fx: function () {
 		return this.target.x + this.target.w / 2 - (
@@ -585,7 +583,7 @@ const cam = {
 	}
 };
 var ticks = 0;
-var player = new Actor("player", 0, 0, 65, 65, ":)");
+var player = new Actor("player", 0, 0, 65, 65);
 
 //Constructor Objects
 function Prop(type, x, y, w, h, text) {
@@ -613,8 +611,9 @@ function Prop(type, x, y, w, h, text) {
 	};
 }
 
-function Actor(type, x, y, w, h, face, sid, gid) {
+function Actor(type, x, y, w, h, name, sid, gid) {
 	//Properties
+	this.name = name;
 	this.x = x || 0;
 	this.y = y || 0;
 	this.w = w || 30;
@@ -631,19 +630,30 @@ function Actor(type, x, y, w, h, face, sid, gid) {
 	this.interp = 0;
 	this.sid = sid || "";
 	this.gid = gid || 0;
-	this.face = face || ":|";
+	this.face = ":)";
 	this.type = type;
+	this.speed = 6.5;
+	this.jumpspeed = 18;
+	this.gravity = 0.8;
+	this.friction = 0.35;	
 
 	//Initialize
 	var dom = $("<div>", {
 		class: type,
 		style: sp("width:%dpx;height:%dpx;", w, h),
-		text: face
+		text: this.face
 	});
 	gbody.append(dom);
 	stage.actors.push(this);
 
 	//Methods
+	this.seedface = function (name) {
+		this.name = name;
+		Math.seedrandom(name);
+		this.face = eyes[Math.floor(Math.random() * eyes.length)]
+			+ mouths[Math.floor(Math.random() * mouths.length)];
+		dom.text(this.face);
+	}
 	this.move = function (dx, dy) {
 		this.x += dx;
 		this.y += dy;
@@ -652,8 +662,8 @@ function Actor(type, x, y, w, h, face, sid, gid) {
 			sp(
 				"translate(%dpx, %dpx) scale(%.2f, %.2f) rotate(%.2fdeg)",
 				this.x, this.y,
-				1 + Math.abs(this.dx / 100),
-				1 + Math.abs(this.dy / 100),
+				1 + Math.abs(this.dx / 75),
+				1 + Math.abs(this.dy / 75),
 				this.dx
 			)
 		);
@@ -661,15 +671,15 @@ function Actor(type, x, y, w, h, face, sid, gid) {
 	this.update = function () {
 		switch (this.type) {
 			case "player":
-				this.vx /= 2;
-				if (input.right()) this.vx += 4;
-				if (input.left()) this.vx -= 4;
+				this.vx *= this.friction;
+				if (input.right()) this.vx += this.speed;
+				if (input.left()) this.vx -= this.speed;
 				if (this.canjump && input.jump()) {
-					this.vy = -11.5;
+					this.vy = -this.jumpspeed;
 					audio.jump.play();
 					this.canjump = false;
 				}
-				this.vy += 0.64;
+				this.vy += this.gravity;
 				if (this.y > 1000) this.die();
 				this.dx = this.vx;
 				this.dy = this.vy;
@@ -720,6 +730,8 @@ function Actor(type, x, y, w, h, face, sid, gid) {
 	this.delete = function () {
 		dom.remove();
 	};
+
+	if (name) this.seedface(name);
 }
 
 function gameloop() {
@@ -738,12 +750,18 @@ function gameloop() {
 				vy: player.vy
 			});
 			break;
+		case "login":
+			if (input.anykey) {
+				player.seedface(login.find("input").val());
+			}	
+			break;	
 	}
 
 	//Reset input
 	for (var i = 0; i < 128; keyboard.keyspressed[i] = 0, i++);
 	touch.right = false;
 	touch.left = false;
+	input.anykey = false;
 }
 
 game.setstatus("loading");

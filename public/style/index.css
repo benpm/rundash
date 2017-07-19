@@ -89,8 +89,8 @@ body {
 	position: absolute;
 	background: #334143;
 	border-bottom: none;
+	border-top-right-radius: 20px;
 	border-top-left-radius: 20px;
-	border-bottom-left-radius: 20px;
 	text-align: center;
 	overflow: hidden;
 	vertical-align: middle;
@@ -116,8 +116,8 @@ body {
 	position: fixed;
 	top: calc(50vmin - 128px);
 	left: calc(50vmax - 128px);
-	width: 196px;
-	height: 196px;
+	width: 256px;
+	height: 256px;
 	animation: linear spin infinite 2s;
 	z-index: 2;
 }
@@ -159,6 +159,7 @@ body {
 	font-size: calc(2vmax + 2vmin);
 	text-align: center;
 	color: #B8D8D8;
+	margin-top: -50%;
 }
 #login form input:focus {
 	outline: none;
@@ -198,6 +199,9 @@ body {
 }
 #login form button:focus {
 	outline: none;
+}
+#login form button[name=clear] {
+	left: calc(2vmax + 2vmin);
 }
 #login form button[name=clear]:hover {
 	background-color: #FE5F55;
