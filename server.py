@@ -43,6 +43,11 @@ TICK_SEC = 20
 TICK = 1 / TICK_SEC
 GAME_TICKS = TICK_SEC * 60
 TTL = TICK_SEC * 4
+HSPEED = 6.5
+VSPEED = 18
+GRAVITY = 0.8
+DRAG = 0.35
+HVEL = HSPEED * (pow(DRAG, 4) + pow(DRAG, 3) + pow(DRAG, 2) + DRAG + 1)
 msg = enum("msg", "join leave game update login init endgame win dead")
 
 # Game structures
@@ -312,7 +317,13 @@ def connect():
     sid = flask.request.sid
     print("[SERVER]", "connection:", flask.request.referrer)
     players[sid] = player = Player(sid, 2, 8, "lobby")
-    player.send(msg.init, {"sid": sid})
+    player.send(msg.init, {
+        "sid": sid,
+        "hspeed": HSPEED,
+        "vspeed": VSPEED,
+        "gravity": GRAVITY,
+        "drag": DRAG
+        })
     #waitqueue.append(player)
 
 # Websocket disconnect

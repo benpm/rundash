@@ -155,8 +155,8 @@ $(document).on("touchstart", function (event) {
 	}
 	var x = event.touches[0].clientX;
 	var y = event.touches[0].clientY;
-	if ((cam.rot && y > window.innerWidth / 2)
-		|| (!cam.rot && x > window.innerWidth / 2)) touch.righthold = true;
+	if ((cam.rot && y > window.innerWidth / 2) ||
+		(!cam.rot && x > window.innerWidth / 2)) touch.righthold = true;
 	else touch.lefthold = true;
 });
 $(document).on("touchend", function (event) {
@@ -165,12 +165,12 @@ $(document).on("touchend", function (event) {
 		touch.lefthold = false;
 	}
 });
-$(document).on("touchmove", function () { 
+$(document).on("touchmove", function () {
 	touch.righthold = touch.lefthold = false;
 	var x = event.clientX;
 	var y = event.clientY;
-	if ((cam.rot && y > window.innerWidth / 2)
-		|| (!cam.rot && x > window.innerWidth / 2))
+	if ((cam.rot && y > window.innerWidth / 2) ||
+		(!cam.rot && x > window.innerWidth / 2))
 		touch.righthold = true;
 	else
 		touch.lefthold = true;
@@ -248,6 +248,10 @@ sock.on("msg", function (message) {
 		case msg.init:
 			console.log("initialized");
 			player.sid = info.sid;
+			player.friction = info.drag;
+			player.gravity = info.gravity;
+			player.jumpspeed = info.vspeed;
+			player.speed = info.hspeed;
 			cam.target = player;
 			game.setstatus("login");
 			break;
@@ -312,14 +316,22 @@ sock.on("msg", function (message) {
 			//Create placement text
 			leaderbplace.removeClass("winner");
 			switch (placement) {
-				case -1: leaderbplace.text("Did Not Finish"); break;
+				case -1:
+					leaderbplace.text("Did Not Finish");
+					break;
 				case 1:
 					leaderbplace.text("1st Place!");
 					leaderbplace.addClass("winner");
 					break;
-				case 2: leaderbplace.text("2nd Place"); break;
-				case 3: leaderbplace.text("3rd Place"); break;
-				default: leaderbplace.text("Runner Up"); break;
+				case 2:
+					leaderbplace.text("2nd Place");
+					break;
+				case 3:
+					leaderbplace.text("3rd Place");
+					break;
+				default:
+					leaderbplace.text("Runner Up");
+					break;
 			}
 			break;
 		case msg.win:
@@ -471,7 +483,7 @@ const game = (function () {
 					$(".loading").hide();
 					$(".disconnected").hide();
 					login.show();
-					break;	
+					break;
 				case "lobby":
 					$(".loading").show();
 					$(".disconnected").hide();
@@ -625,7 +637,7 @@ function Actor(type, x, y, w, h, name, sid, gid) {
 	this.speed = 6.5;
 	this.jumpspeed = 18;
 	this.gravity = 0.8;
-	this.friction = 0.35;	
+	this.friction = 0.35;
 
 	//Initialize
 	var dom = $("<div>", {
@@ -640,8 +652,8 @@ function Actor(type, x, y, w, h, name, sid, gid) {
 	this.seedface = function (name) {
 		this.name = name;
 		Math.seedrandom(name);
-		this.face = eyes[Math.floor(Math.random() * eyes.length)]
-			+ mouths[Math.floor(Math.random() * mouths.length)];
+		this.face = eyes[Math.floor(Math.random() * eyes.length)] +
+			mouths[Math.floor(Math.random() * mouths.length)];
 		dom.text(this.face);
 	}
 	this.move = function (dx, dy) {
@@ -700,7 +712,10 @@ function Actor(type, x, y, w, h, name, sid, gid) {
 		}
 	};
 	this.die = function () {
-		if (this.type == "player") send(msg.dead, { x: this.x, y: this.y });
+		if (this.type == "player") send(msg.dead, {
+			x: this.x,
+			y: this.y
+		});
 		new Prop("grave", this.x - this.vx, this.y - this.vy, 60, 80, ":(");
 		this.vx = this.vy = 0;
 		this.x = 2;
@@ -743,8 +758,8 @@ function gameloop() {
 			if (input.anykey) {
 				player.seedface(login.find("input").val());
 				loginface.text(player.face);
-			}	
-			break;	
+			}
+			break;
 	}
 
 	//Reset input
