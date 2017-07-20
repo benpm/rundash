@@ -126,7 +126,7 @@ $(document).keyup(function (event) {
 	keyboard.keys[keyboard.keymap[event.key.toLowerCase()]] = 0;
 });
 $(window).resize(function () {
-	cam.zoom();
+	if (game.status == "game") cam.zoom();
 });
 const touch = {
 	right: false,
@@ -176,12 +176,14 @@ $(document).on("touchmove", function () {
 		touch.lefthold = true;
 });
 
+const offset = 1000;
 const address = location.href;
 const sock = io.connect(address);
 const sp = sprintf;
 const body = $(document.body)
 const gbody = $("#game");
 const login = $("#login");
+const loginface = $("#login .player");
 const infoelem = $("#i");
 const leaderboard = $(".leaderboard");
 const leaderbplace = $(".leaderboard p#placement");
@@ -466,12 +468,9 @@ const game = (function () {
 					gbody.hide()
 					break;
 				case "login":
-					cam.zoom();
 					$(".loading").hide();
 					$(".disconnected").hide();
 					login.show();
-					gbody.show();
-					cam.reset();
 					break;	
 				case "lobby":
 					$(".loading").show();
@@ -526,20 +525,16 @@ const cam = {
 	speed: 0.1,
 	update: function () {
 		if (this.target) this.follow();
-		gbody.css(
+		/* gbody.css(
 			"transform",
 			sp(
 				"%s scale(%.2f, %.2f) translate(%dpx, %dpx)",
-				/* this.rot ? "rotate(90deg)" :  */"",
 				this.zoomlvl,
 				this.zoomlvl,
-				/* this.rot ? -this.x - ((window.innerWidth / this.zoomlvl) / 32) +
-				((window.innerHeight / this.zoomlvl) / 32) : -this.x, */
 				-this.x, -this.y
-				/* this.rot ? -this.y - ((window.innerHeight / this.zoomlvl) / 32) -
-				((window.innerWidth / this.zoomlvl) / 32) : -this.y */
 			)
-		);
+		); */
+		window.scrollTo(offset + this.x, offset + this.y);
 	},
 	zoom: function () {
 		var rotchange = this.rot;
@@ -547,19 +542,14 @@ const cam = {
 		rotchange = (rotchange != this.rot);
 		this.zoomlvl = ((window.innerWidth + window.innerHeight) / (1280 + 720)) + (this.rot ? 0.3 : 0);
 		this.zoomlvl *= 0.7;
-		if (game.status == "login") this.zoomlvl *= 3;
+		this.zoomlvl.toFixed(1);
+		gbody.css("transform", sp("scale(%1$f, %1$f)", this.zoomlvl));
 		this.reset();
 		if (rotchange) {
 			if (this.rot) {
 				body.addClass("landscape");
-				//leaderboard.addClass("landscape");
-				//infoelem.addClass("landscape");
-				//login.addClass("landscape");
 			} else {
 				body.removeClass("landscape");
-				//leaderboard.removeClass("landscape");
-				//infoelem.removeClass("landscape");
-				//login.removeClass("landscape");
 			}
 		}
 	},
@@ -574,12 +564,12 @@ const cam = {
 		this.update();
 	},
 	fx: function () {
-		return this.target.x + this.target.w / 2 - (
-			(this.rot ? window.innerHeight : window.innerWidth) / this.zoomlvl / 2);
+		return (this.target.x + this.target.w / 2) * this.zoomlvl - (
+			(this.rot ? window.innerHeight : window.innerWidth) / 2);
 	},
 	fy: function () {
-		return this.target.y + this.target.h / 2 - (
-			(this.rot ? window.innerWidth : window.innerHeight) / this.zoomlvl / 2);
+		return (this.target.y + this.target.h / 2) * this.zoomlvl - (
+			(this.rot ? window.innerWidth : window.innerHeight) / 2);
 	}
 };
 var ticks = 0;
@@ -737,7 +727,6 @@ function Actor(type, x, y, w, h, name, sid, gid) {
 function gameloop() {
 	window.requestAnimationFrame(gameloop);
 	ticks++;
-	//info.html(sp("%s, %s", game.status, sock.connected ? "connected" : "not connected"));
 
 	switch (game.status) {
 		case "game":
@@ -753,6 +742,7 @@ function gameloop() {
 		case "login":
 			if (input.anykey) {
 				player.seedface(login.find("input").val());
+				loginface.text(player.face);
 			}	
 			break;	
 	}

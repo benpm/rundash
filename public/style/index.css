@@ -33,9 +33,12 @@ body {
 }
 
 #game {
-	position: fixed;
+	position: absolute;
 	top: 0;
 	left: 0;
+	overflow: visible;
+	top: 1000px;
+	left: 1000px;
 }
 
 #i {
@@ -51,11 +54,25 @@ body {
 	left: 0;
 }
 
-.platform {
+div.platform {
 	position: absolute;
 	background: #7A9E9F;
 	border-radius: 20px;
-	box-shadow: 0px 10px 0px #334143;
+}
+
+div.platform::after {
+	content: "";
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	right: 0;
+	background: none;
+	border-radius: 20px;
+	box-shadow: 0px 10px 0px 0px #334143;
+	z-index: -1;
 }
 
 .spike {
@@ -96,7 +113,7 @@ body {
 	vertical-align: middle;
 	line-height: calc(50% + 37px);
 	font-size: 40px;
-	z-index: -1;
+	z-index: -2;
 	writing-mode: tb-rl;
 	font-family: "UbuntuMono", monospace;
 }
@@ -208,6 +225,17 @@ body {
 }
 #login form button[name=submit]:hover {
 	background-color: #EEF5DB;
+}
+#login .player {
+	vertical-align: middle;
+	line-height: 145%;
+	font-size: 5vmax;
+	writing-mode: tb-rl;
+	top: calc(70% - 4vmax);
+	left: calc(50% - 4vmax);
+	width: 8vmax;
+	height: 8vmax;
+	color: #3C4C4F;
 }
 /* #login.landscape {
 	width: 100vmin;
