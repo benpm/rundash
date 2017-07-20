@@ -118,7 +118,7 @@ div.platform::after {
 	font-family: "UbuntuMono", monospace;
 }
 
-.goal {
+div.goal {
 	background: repeating-linear-gradient(
 		45deg,
 		#EEF5DB,
