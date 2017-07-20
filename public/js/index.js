@@ -694,13 +694,13 @@ function Actor(type, x, y, w, h, name, sid, gid) {
 				}
 				break;
 			case "friend":
-				this.interp += (1 - this.interp) / 3;
+				this.interp += 0.5;
 				cubicHermite(
 					[this.x, this.y], [this.vx, this.vy], [this.nx, this.ny], [this.nvx, this.nvy],
 					this.interp, this.npos
 				)
-				this.dx = lerp(this.dx, this.npos[0] - this.x, 0.5);
-				this.dy = lerp(this.dy, this.npos[1] - this.y, 0.5);
+				this.dx = this.nvx;
+				this.dy = this.nvy;
 				this.dx = Math.abs(this.dx) > 10 ? 0 : this.dx;
 				this.dy = Math.abs(this.dy) > 10 ? 0 : this.dy;
 				this.x = this.npos[0];
