@@ -7,7 +7,8 @@ import flask_socketio as io
 import msgpack
 import gzip
 import json
-from generation import Level, Prop
+import generation
+import importlib
 
 # Helper functions
 def pack(obj):
@@ -56,8 +57,10 @@ class Game(object):
         self.gametime = 0
         self.actors = []
         self.timer = GAME_TICKS
-        self.level = Level("horizontal")
-        self.level.props
+
+        importlib.reload(generation)
+        self.level = generation.build_level("vertical")
+
         games.append(self)
         print(self.title, "created")
 
@@ -289,7 +292,6 @@ def recieve(message):
         waitqueue.append(player)
     elif data[0] == msg.win:
         assert game
-        assert distance(player.x, player.y, game.level.goal.x, game.level.goal.y) < 750
         if player.win == None:
             player.win = Win(game, player, player.timer)
         elif player.win.time > player.timer:

@@ -1,21 +1,29 @@
 from math import *
-import string
 import random
 import msgpack
 import gzip
 import json
 
+def build_level(type_, grid = 10):
+    return Level(type_, grid)
+
 class Level(object):
     GRID = 10
     def __init__(self, type_, grid = 10):
         self.GRID = grid
+        print("Generating Level\nGenerating Level\nGenerating Level")
 
         self.spawnx = 0
-        self.spawny = 0
+        self.spawny = 7
+        
+        self.props = []
+        
 
         if type_ is "horizontal":
-            self.props = []
-            self.generate_horizontal()
+            self.generate_horizontal()            
+        elif type_ is "vertical":
+            self.generate_vertical()
+        
 
     def generate_horizontal(self):
         # Prop (x, y, w, h, proptype)
@@ -34,6 +42,7 @@ class Level(object):
 
         # Starting platform     
         self.props.append(Prop(x, y, w, h, "platform"))
+
         # Spike floor
         self.props.append(Prop(-1000, 110, 2000, h, "platform"))
         self.props.append(Prop(-1000, 110 - 5, 2000, 5, "spike"))
@@ -81,15 +90,7 @@ class Level(object):
                         5,
                         5,
                         "spike"))
-
-            # print("-----------------------------------")
-            # print("Platform {} to platform {} stats:".format(i, i + 1))
-            # print("Normalized x: {}".format(norm_x))
-            # # print("Normalized y: {}".format(norm_y))
-            # print("Delta_x: {}".format(delta_x))
-            # print("Delta_y: {}".format(delta_y))
-            # print("Distance: {}".format(prev_dist))
-                
+                        
         # Goal
         self.goal = Prop(x + 30 + w, y - 20, 4, 16, "platform goal")
         self.props.append(self.goal)
@@ -98,11 +99,57 @@ class Level(object):
         self.compress()
     
     def generate_vertical(self):
-        pass
+        left_bound = -200
+        right_bound = 200
+
+        max_height = -300
+        min_height = 20
+
+        max_x = 36
+        min_x = 10
+
+        max_y_up = 8
+        max_y_down = 10
+        min_y = 0
+
+        # Starting platform     
+        self.props.append(Prop(((left_bound + right_bound) // 2) - 20, 10, 40, 4, "platform"))
+        
+        # Spike floor
+        self.props.append(Prop(left_bound, min_height, right_bound - left_bound, 4, "platform"))
+        self.props.append(Prop(left_bound, min_height - 5, right_bound - left_bound, 5, "spike"))
+
+        # Left and right wall
+        self.props.append(Prop(left_bound, max_height, 4, min_height - max_height, "platform"))
+        self.props.append(Prop(right_bound - 4, max_height, 4, min_height - max_height, "platform"))
+
+        y = 10
+        width = 0
+        while y > max_height + 20:
+            y -= 20
+            x = left_bound
+            while x + width < (right_bound):
+                delta_x = random.uniform(min_x, max_x)
+                delta_y = random.uniform(-7, 7)
+
+                width = random.uniform(10, 30)            
+                x += delta_x + width
+
+                self.props.append(Prop(x, y + delta_y, width, 4, "platform"))
+
+            # ensure prop does not extend past wall
+            if self.props[-1].x + self.props[-1].width > right_bound:
+                self.props.pop()
+
+        # Goal
+        self.goal = Prop(left_bound, max_height, right_bound - left_bound, 4, "platform goal")
+        self.props.append(self.goal)
+
+        # Compress
+        self.compress()
         
     def compress(self):
-        props = [prop.asdict() for prop in self.props]
-        self.compressed = json.dumps({"props": props})
+        self.compressed = json.dumps({"props": [prop.asdict() for prop in self.props]})
 
     def normalize(self, given, max_, min_):
         return (given - min_)/(max_ - min_)
@@ -111,7 +158,7 @@ class Level(object):
         return sqrt((y2 - y1)**2 + (x2 - x1)**2)
 
 class Prop(object):
-    "Static object on stage. Position example: [x, y]; and size: [width, height]."
+    "Static object on stage"
 
     def __init__(self, x, y, w, h, proptype):
         self.x = x * Level.GRID
