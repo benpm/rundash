@@ -23,7 +23,6 @@ class Level(object):
             self.generate_horizontal()            
         elif type_ is "vertical":
             self.generate_vertical()
-        
 
     def generate_horizontal(self):
         # Prop (x, y, w, h, proptype)
@@ -41,11 +40,11 @@ class Level(object):
         h = 4
 
         # Starting platform     
-        self.props.append(Prop(x, y, w, h, "platform"))
+        self.insert(Prop(x, y, w, h, "platform"))
 
         # Spike floor
-        self.props.append(Prop(-1000, 110, 2000, h, "platform"))
-        self.props.append(Prop(-1000, 110 - 5, 2000, 5, "spike"))
+        self.insert(Prop(-1000, 110, 2000, h, "platform"))
+        self.insert(Prop(-1000, 110 - 5, 2000, 5, "spike"))
         
         num_platforms = random.randint(7, 15)
         for i in range(0, num_platforms):
@@ -68,14 +67,14 @@ class Level(object):
 
             w = random.uniform(10, 30)
 
-            self.props.append(Prop(x, y, w, h, "platform"))
+            self.insert(Prop(x, y, w, h, "platform"))
             
             # Need to base spike probability on normalized values
             if norm_x < 0.9 and plat_vert_sign == 1 and random.random() < .7:
-                self.props.append(
+                self.insert(
                     Prop(x, y - 5, 5, 5, "spike"))
             elif w > 12 and random.random() < 0.6:
-                self.props.append(
+                self.insert(
                     Prop(
                         x + random.randrange(0 if (plat_vert_sign == 1) else 2, round(w / 2), 5) + random.random(),
                         y - 5,
@@ -83,7 +82,7 @@ class Level(object):
                         5,
                         "spike"))
             if w > 25 and random.random() < 0.5:
-                self.props.append(
+                self.insert(
                     Prop(
                         x + random.randrange(round(w / 2) + 2 if plat_vert_sign is 1 else 0 , round(w * .8), 5),
                         y - 5,
@@ -93,7 +92,7 @@ class Level(object):
                         
         # Goal
         self.goal = Prop(x + 30 + w, y - 20, 4, 16, "platform goal")
-        self.props.append(self.goal)
+        self.insert(self.goal)
 
         # Compress
         self.compress()
@@ -113,15 +112,15 @@ class Level(object):
         min_y = 0
 
         # Starting platform     
-        self.props.append(Prop(((left_bound + right_bound) // 2) - 20, 10, 40, 4, "platform"))
+        self.insert(Prop(((left_bound + right_bound) // 2) - 20, 10, 40, 4, "platform"))
         
         # Spike floor
-        self.props.append(Prop(left_bound, min_height, right_bound - left_bound, 4, "platform"))
-        self.props.append(Prop(left_bound, min_height - 5, right_bound - left_bound, 5, "spike"))
+        self.insert(Prop(left_bound, min_height, right_bound - left_bound, 4, "platform"))
+        self.insert(Prop(left_bound, min_height - 5, right_bound - left_bound, 5, "spike"))
 
         # Left and right wall
-        self.props.append(Prop(left_bound, max_height, 4, min_height - max_height, "platform"))
-        self.props.append(Prop(right_bound - 4, max_height, 4, min_height - max_height, "platform"))
+        self.insert(Prop(left_bound, max_height, 4, min_height - max_height + 3, "platform"))
+        self.insert(Prop(right_bound - 4, max_height, 4, min_height - max_height + 3, "platform"))
 
         y = 10
         width = 0
@@ -130,12 +129,12 @@ class Level(object):
             x = left_bound
             while x + width < (right_bound):
                 delta_x = random.uniform(min_x, max_x)
-                delta_y = random.uniform(-7, 7)
+                delta_y = random.uniform(0, 9) * random.choice([-1, 1])
 
                 width = random.uniform(10, 30)            
                 x += delta_x + width
 
-                self.props.append(Prop(x, y + delta_y, width, 4, "platform"))
+                self.insert(Prop(x, y + delta_y, width, 4, "platform"))
 
             # ensure prop does not extend past wall
             if self.props[-1].x + self.props[-1].width > right_bound:
@@ -143,7 +142,7 @@ class Level(object):
 
         # Goal
         self.goal = Prop(left_bound, max_height, right_bound - left_bound, 4, "platform goal")
-        self.props.append(self.goal)
+        self.insert(self.goal)
 
         # Compress
         self.compress()
@@ -157,14 +156,19 @@ class Level(object):
     def distance(self, x1, y1, x2, y2):
         return sqrt((y2 - y1)**2 + (x2 - x1)**2)
 
+    def insert(self, prop):
+        self.props.append(prop)
+
 class Prop(object):
     "Static object on stage"
 
-    def __init__(self, x, y, w, h, proptype):
+    def __init__(self, x, y, width, height, proptype):
         self.x = x * Level.GRID
         self.y = y * Level.GRID
-        self.width = w * Level.GRID
-        self.height = h * Level.GRID
+
+        self.width = width * Level.GRID
+        self.height = height * Level.GRID
+        
         self.type = proptype
 
     def update(self, x, y):
