@@ -709,7 +709,7 @@ function Actor(type, x, y, w, h, name, sid, gid) {
 				}
 				break;
 			case "friend":
-				this.interp += 0.5;
+				this.interp = lerp(this.interp, 1, 0.5);
 				cubicHermite(
 					[this.x, this.y], [this.vx, this.vy], [this.nx, this.ny], [this.nvx, this.nvy],
 					this.interp, this.npos
