@@ -176,7 +176,6 @@ $(document).on("touchmove", function () {
 		touch.lefthold = true;
 });
 
-const offset = 1000;
 const address = location.href;
 const sock = io.connect(address);
 const sp = sprintf;
@@ -429,6 +428,7 @@ var stage = {
 		}
 	},
 	create: function (data) {
+		var minx = 0, miny = 0;
 		var props = JSON.parse(data).props;
 		for (var i = 0; i < props.length; i++) {
 			new Prop(props[i].type,
@@ -436,7 +436,14 @@ var stage = {
 				Math.floor(props[i].y),
 				Math.floor(props[i].w),
 				Math.floor(props[i].h));
+			minx = Math.min(props[i].x, minx);
+			miny = Math.min(props[i].y, miny);
 		}
+		minx -= 100;
+		miny -= 100;
+		this.bound(minx, miny);
+		cam.offsetx = -minx;
+		cam.offsety = -miny;
 	},
 	findByIndex: function (gid) {
 		return this.actors.findIndex(function (actor) {
@@ -454,6 +461,10 @@ var stage = {
 			this.props.pop().delete();
 		for (var i = this.actors.length - 1; i >= 1; i--)
 			this.actors.pop().delete();
+	},
+	bound: function (minx, miny) {
+		gbody.css("left", -Math.min(0, minx) + "px");
+		gbody.css("top", -Math.min(0, miny) + "px");
 	},
 	timer: 0
 };
@@ -529,6 +540,8 @@ const game = (function () {
 const cam = {
 	x: 0,
 	y: 0,
+	offsetx: 0,
+	offsety: 0,
 	currFFZoom: 1,
 	currIEZoom: 100,
 	zoomlvl: 1,
@@ -546,7 +559,7 @@ const cam = {
 				-this.x, -this.y
 			)
 		); */
-		window.scrollTo(offset + this.x, offset + this.y);
+		window.scrollTo(this.offsetx + this.x, this.offsety + this.y);
 	},
 	zoom: function () {
 		var rotchange = this.rot;
