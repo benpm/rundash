@@ -27,6 +27,12 @@ def send(recipient, msgtype, data):
 def distance(x1, y1, x2, y2):
     return sqrt((y2 - y1)**2 + (x2 - x1)**2)
 
+def set_room(player, room):
+    with app.app_context():
+        io.join_room(room, player.sid, "/")
+    
+    player.room = room
+
 # Setup server app
 app = flask.Flask(__name__, static_url_path="/public")
 
@@ -77,7 +83,8 @@ class Game(object):
         # Add player to room
         player.game = self
         player.gindex = len(self.players)
-        player.room = self.room
+        set_room(player, self.room)
+        # player.room = self.room
         player.update(self.level.spawnx, self.level.spawny, 0, 0)
         player.send(msg.join, {
             "number": self.num,
@@ -95,7 +102,9 @@ class Game(object):
                 send(self.room, msg.leave, {"index": player.gindex})
                 self.players.remove(player)
             print(self.title, player.name, "exited")
-            player.room = "lobby"
+            set_room(player, "lobby")
+            # player.room = "lobby"
+            
             player.game = None
             player.gindex = -1
             player.timer = 0
@@ -219,7 +228,7 @@ class Actor(object):
 
 
 class Player(Actor):
-    def __init__(self, sid, x, y, room="lobby"):
+    def __init__(self, sid, x, y, room = "lobby"):
         super(Player, self).__init__(x, y)
 
         # Nickname
@@ -234,23 +243,13 @@ class Player(Actor):
         self.win = None
 
         # Room (lobby by default)
-        self.room = self._room = room
+        self.room = room
 
         # Game Race Timer
         self.timer = 0
 
     def send(self, msgtype, data):
         send(self.sid, msgtype, data)
-
-    @property
-    def room(self):
-        return self._room
-
-    @room.setter
-    def room(self, value):
-        with app.app_context():
-            io.join_room(value, self.sid, "/")
-        self._room = value
 
 
 class Win(object):
