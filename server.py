@@ -9,6 +9,8 @@ import gzip
 import json
 import generation
 import importlib
+import random
+from game_classes import Player, Actor, Win
 
 # Helper functions
 def pack(obj):
@@ -44,7 +46,6 @@ maxgames = 10
 sock = io.SocketIO(app)
 
 # Globals
-GRID = 10
 TICK_SEC = 20
 TICK = 1 / TICK_SEC
 GAME_TICKS = TICK_SEC * 60
@@ -58,8 +59,8 @@ msg = enum("msg", "join leave game update login init endgame win dead")
 
 # Game structures
 class Game(object):
-    def __init__(self):
-        self.num = len(games)
+    def __init__(self, game_num, tick_sec, game_ticks):
+        self.num = game_num
         self.room = "game_{}".format(self.num)
         self.title = "[GAME {}]".format(self.num)
         self.players = []
@@ -67,10 +68,12 @@ class Game(object):
         self.ttl = TTL
         self.gametime = 0
         self.actors = []
-        self.timer = GAME_TICKS
+
+        self.timer = game_ticks
+        self.tick_sec = tick_sec
 
         importlib.reload(generation)
-        self.level = generation.build_level("vertical")
+        self.level = generation.build_level(random.choice(["horizontal", "vertical"]))
 
         games.append(self)
         print(self.title, "created")
@@ -84,14 +87,15 @@ class Game(object):
         player.game = self
         player.gindex = len(self.players)
         set_room(player, self.room)
-        # player.room = self.room
         player.update(self.level.spawnx, self.level.spawny, 0, 0)
-        player.send(msg.join, {
+
+        send(player.sid, msg.join, {
             "number": self.num,
             "gid": player.gindex,
             "x": self.level.spawnx,
             "y": self.level.spawny
         })
+
         print(self.title, player.name, "joined")
         self.players.append(player)
 
@@ -103,7 +107,6 @@ class Game(object):
                 self.players.remove(player)
             print(self.title, player.name, "exited")
             set_room(player, "lobby")
-            # player.room = "lobby"
             
             player.game = None
             player.gindex = -1
@@ -182,7 +185,7 @@ class Game(object):
                 "y": [],
                 "vx": [],
                 "vy": [],
-                "time": ceil(self.timer / TICK_SEC)
+                "time": ceil(self.timer / self.tick_sec)
             }
             for player in self.players:
                 update["gid"].append(player.gindex)
@@ -203,69 +206,6 @@ class Game(object):
                 player.timer += 1
 
             return True
-
-class Actor(object):
-    "Character"
-
-    def __init__(self, x, y):
-        # Position
-        self.x = x * GRID
-        self.y = y * GRID
-        # Velocity
-        self.vx = 0
-        self.vy = 0
-        # Change in position
-        self.dx = 0
-        self.dy = 0
-
-    def update(self, x, y, vx, vy):
-        self.dx = x - self.x
-        self.dy = y - self.y
-        self.x = x
-        self.y = y
-        self.vx = vx
-        self.vy = vy
-
-
-class Player(Actor):
-    def __init__(self, sid, x, y, room = "lobby"):
-        super(Player, self).__init__(x, y)
-
-        # Nickname
-        self.name = "player"
-
-        # Session ID string
-        self.sid = sid
-
-        # Game
-        self.gindex = -1
-        self.game = None
-        self.win = None
-
-        # Room (lobby by default)
-        self.room = room
-
-        # Game Race Timer
-        self.timer = 0
-
-    def send(self, msgtype, data):
-        send(self.sid, msgtype, data)
-
-
-class Win(object):
-    "Represents a win in a game"
-
-    def __init__(self, game, player, time):
-        self.game = game
-        self.time = time
-        self.player = player
-
-    def obj(self):
-        return {
-            "name": self.player.name,
-            "time": floor(self.time / TICK_SEC),
-            "sid": self.player.sid
-        }
 
 # Root serving
 @app.route("/")
@@ -292,7 +232,8 @@ def recieve(message):
         #TODO: login using GameJolt API
         assert player not in waitqueue
         assert game == None
-        player.name = info.decode() if len(info) > 0 else player.name
+        if len(info) > 0:
+            player.name = info.decode()
         waitqueue.append(player)
     elif data[0] == msg.win:
         assert game
@@ -300,7 +241,7 @@ def recieve(message):
             player.win = Win(game, player, player.timer)
         elif player.win.time > player.timer:
             player.win.time = player.timer
-        player.send(msg.win, {"time": player.timer})
+        send(player.sid, msg.win, {"time": player.timer})
         player.timer = 0
     elif data[0] == msg.game:
         assert player not in waitqueue
@@ -316,14 +257,13 @@ def connect():
     sid = flask.request.sid
     print("[SERVER]", "connection:", flask.request.referrer)
     players[sid] = player = Player(sid, 2, 8, "lobby")
-    player.send(msg.init, {
+    send(player.sid, msg.init, {
         "sid": sid,
         "hspeed": HSPEED,
         "vspeed": VSPEED,
         "gravity": GRAVITY,
         "drag": DRAG
         })
-    #waitqueue.append(player)
 
 # Websocket disconnect
 @sock.on("disconnect")
@@ -336,7 +276,9 @@ def disconnect():
         player.game.removeplayer(player)
     else:
         # Remove player from waitqueue
-        if player in waitqueue: waitqueue.remove(player)
+        if player in waitqueue: 
+            waitqueue.remove(player)
+
     io.leave_room(player.room)
     players.pop(player.sid)
 
@@ -365,12 +307,9 @@ def gameloop():
                 for game in games:
                     if not game.started:
                         game.addplayer(player)
-                        added = True
                         break
-
-                # Add new game
-                if not added:
-                    game = Game()
+                else:
+                    game = Game(len(games), TICK_SEC, GAME_TICKS)
                     game.addplayer(player)
 
                 break

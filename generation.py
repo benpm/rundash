@@ -11,14 +11,12 @@ class Level(object):
     GRID = 10
     def __init__(self, type_, grid = 10):
         self.GRID = grid
-        print("Generating Level\nGenerating Level\nGenerating Level")
 
         self.spawnx = 0
         self.spawny = 7
         
         self.props = []
         
-
         if type_ is "horizontal":
             self.generate_horizontal()            
         elif type_ is "vertical":
