@@ -115,11 +115,28 @@ class Game(object):
     def start(self):
         self.started = True
         self.gametime = 20 * 60
+
+        # TEMPORARY WORK AROUND
+        # TEMPORARY WORK AROUND
+        # TEMPORARY WORK AROUND
+        # TEMPORARY WORK AROUND
+        for player in self.players:
+            send(player.sid, msg.game, {
+                "number": self.num,
+                "players": [{"name": p.name, "gid": p.gindex} for p in self.players],
+                "data": self.level.compressed
+            })
+        """Original Code:
         send(self.room, msg.game, {
             "number": self.num,
             "players": [{"name": p.name, "gid": p.gindex} for p in self.players],
             "data": self.level.compressed
         })
+        """
+        # TEMPORARY WORK AROUND
+        # TEMPORARY WORK AROUND
+        # TEMPORARY WORK AROUND
+        # TEMPORARY WORK AROUND
         print(self.title, "started")
 
     def stop(self):
@@ -187,6 +204,7 @@ class Game(object):
                 "vy": [],
                 "time": ceil(self.timer / self.tick_sec)
             }
+
             for player in self.players:
                 update["gid"].append(player.gindex)
                 update["x"].append(player.x)
