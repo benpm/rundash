@@ -29,11 +29,19 @@ def send(recipient, msgtype, data):
 def distance(x1, y1, x2, y2):
     return sqrt((y2 - y1)**2 + (x2 - x1)**2)
 
-def set_room(player, room):
+def set_room(player, room, namespace = "/"):
     with app.app_context():
-        io.join_room(room, player.sid, "/")
+        io.join_room(room, player.sid, namespace)
     
     player.room = room
+
+def leave_room(player, room, namespace = "/"):
+    with app.app_context():
+        io.leave_room(room, player.sid, "/")
+
+def close_room(room, namespace = "/"):
+    with app.app_context():
+        io.close_room(room, namespace)
 
 # Setup server app
 app = flask.Flask(__name__, static_url_path="/public")
@@ -57,20 +65,22 @@ DRAG = 0.35
 HVEL = HSPEED * (pow(DRAG, 4) + pow(DRAG, 3) + pow(DRAG, 2) + DRAG + 1)
 msg = enum("msg", "join leave game update login init endgame win dead")
 
-# Game structures
 class Game(object):
     def __init__(self, game_num, tick_sec, game_ticks):
         self.num = game_num
         self.room = "game_{}".format(self.num)
         self.title = "[GAME {}]".format(self.num)
-        self.players = []
-        self.started = False
-        self.ttl = TTL
-        self.gametime = 0
+
         self.actors = []
+        self.players = []
+
+        self.started = False
+        self.finished = False
+        self.ttl = TTL
 
         self.timer = game_ticks
         self.tick_sec = tick_sec
+        self.gametime = 0        
 
         importlib.reload(generation)
         self.level = generation.build_level(random.choice(["horizontal", "vertical"]))
@@ -86,7 +96,9 @@ class Game(object):
         # Add player to room
         player.game = self
         player.gindex = len(self.players)
+
         set_room(player, self.room)
+
         player.update(self.level.spawnx, self.level.spawny, 0, 0)
 
         send(player.sid, msg.join, {
@@ -101,54 +113,43 @@ class Game(object):
 
     def removeplayer(self, player, goodbye=True):
         assert player.game == self, player.game.title
-        if player in self.players:
-            if goodbye:
-                send(self.room, msg.leave, {"index": player.gindex})
-                self.players.remove(player)
-            print(self.title, player.name, "exited")
-            set_room(player, "lobby")
+
+        if goodbye:
+            send(self.room, msg.leave, {"index": player.gindex})
+            self.players.remove(player)
+
+        print(self.title, player.name, "exited")
+
+        set_room(player, "lobby")
             
-            player.game = None
-            player.gindex = -1
-            player.timer = 0
+        player.game = None
+        player.gindex = -1
+        player.timer = 0
 
     def start(self):
         self.started = True
         self.gametime = 20 * 60
 
-        # TEMPORARY WORK AROUND
-        # TEMPORARY WORK AROUND
-        # TEMPORARY WORK AROUND
-        # TEMPORARY WORK AROUND
-        for player in self.players:
-            send(player.sid, msg.game, {
-                "number": self.num,
-                "players": [{"name": p.name, "gid": p.gindex} for p in self.players],
-                "data": self.level.compressed
-            })
-        """Original Code:
         send(self.room, msg.game, {
             "number": self.num,
             "players": [{"name": p.name, "gid": p.gindex} for p in self.players],
             "data": self.level.compressed
         })
-        """
-        # TEMPORARY WORK AROUND
-        # TEMPORARY WORK AROUND
-        # TEMPORARY WORK AROUND
-        # TEMPORARY WORK AROUND
+      
         print(self.title, "started")
 
     def stop(self):
-        self.players.clear()
         self.started = False
+        self.finished = True
+        
+        close_room(self.room)
         print(self.title, "stopped")
 
     def finish(self):
         print(self.title, "finished")
         wins = []
 
-        # Add DNFs
+        # Add Wins
         for player in self.players:
             if player.win:
                 wins.append({
@@ -174,11 +175,14 @@ class Game(object):
                     "sid": player.sid,
                     "time": 0
                 })
+
+        # Remove all players
+        for player in self.players:
             self.removeplayer(player, goodbye=False)
+        
+        send(self.room, msg.endgame, wins)
 
         # Stop game
-        self.players.clear()
-        send(self.room, msg.endgame, wins)
         self.stop()
 
     def update(self):
@@ -187,43 +191,40 @@ class Game(object):
                 self.ttl -= 1
                 if self.ttl <= 0:
                     self.start()
-            return True
-        else:
-            # Check if there are no players left
-            if len(self.players) <= 1:
-                print("empty game! %d players left" % len(self.players))
-                self.finish()
-                return False
+            return
 
-            # Send position / velocity updates to players
-            update = {
-                "gid": [],
-                "x": [],
-                "y": [],
-                "vx": [],
-                "vy": [],
-                "time": ceil(self.timer / self.tick_sec)
-            }
+        # Check if there are no players left
+        if len(self.players) <= 1:
+            print("empty game! %d players left" % len(self.players))
+            self.finish()
 
-            for player in self.players:
-                update["gid"].append(player.gindex)
-                update["x"].append(player.x)
-                update["y"].append(player.y)
-                update["vx"].append(player.vx)
-                update["vy"].append(player.vy)
-            send(self.room, msg.update, update)
+        # Send position / velocity updates to players
+        update = {
+            "gid": [],
+            "x": [],
+            "y": [],
+            "vx": [],
+            "vy": [],
+            "time": ceil(self.timer / self.tick_sec)
+        }
 
-            # Countdown until time is up
-            self.timer -= 1
-            if self.timer <= 0:
-                self.finish()
-                return False
+        for player in self.players:
+            update["gid"].append(player.gindex)
+            update["x"].append(player.x)
+            update["y"].append(player.y)
+            update["vx"].append(player.vx)
+            update["vy"].append(player.vy)
 
-            # Increment player counters
-            for player in self.players:
-                player.timer += 1
+        send(self.room, msg.update, update)
 
-            return True
+        # Countdown until time is up
+        self.timer -= 1
+        if self.timer <= 0:
+            self.finish()
+
+        # Increment player counters
+        for player in self.players:
+            player.timer += 1
 
 # Root serving
 @app.route("/")
@@ -235,7 +236,6 @@ def index():
 def sendfile(path):
     return flask.send_from_directory("public", path)
 
-
 # Websocket recieve
 @sock.on("msg")
 def recieve(message):
@@ -244,6 +244,7 @@ def recieve(message):
     game = player.game
     data = unpack(message)
     info = data[1]
+    
     if data[0] == msg.update:
         player.update(info[b"x"], info[b"y"], info[b"vx"], info[b"vy"])
     elif data[0] == msg.login:
@@ -310,11 +311,13 @@ def gameloop():
         dtick = time.clock()
 
         # Update games
-        ngames = len(games)
-        for i in range(ngames):
-            if not games[ngames - 1 - i].update():
-                del games[ngames - 1 - i]
-
+        for game in games:
+            if game.finished is True:
+                games.remove(game)
+                del game
+            else:
+                game.update()
+                
         # Update game queue
         for player in waitqueue:
             if len(games) <= maxgames:
