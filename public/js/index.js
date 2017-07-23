@@ -469,7 +469,10 @@ var stage = {
 	},
 	removeByIndex: function (gid) {
 		const index = this.findByIndex(gid);
-		if (index != -1) this.actors.splice(index, 1);
+		if (index != -1) {
+			this.actors[index].delete();
+			this.actors.splice(index, 1);
+		}
 		else console.error("tried to remove actor #%d, but it doesn't exist", gid)
 	},
 	clear: function () {
