@@ -32,7 +32,7 @@ def distance(x1, y1, x2, y2):
 def set_room(player, room, namespace = "/"):
     with app.app_context():
         io.join_room(room, player.sid, namespace)
-    
+
     player.room = room
 
 def leave_room(player, room, namespace = "/"):
@@ -80,7 +80,7 @@ class Game(object):
 
         self.timer = game_ticks
         self.tick_sec = tick_sec
-        self.gametime = 0        
+        self.gametime = 0
 
         importlib.reload(generation)
         self.level = generation.build_level(random.choice(["horizontal", "vertical"]))
@@ -121,7 +121,7 @@ class Game(object):
         print(self.title, player.name, "exited")
 
         set_room(player, "lobby")
-            
+
         player.game = None
         player.gindex = -1
         player.timer = 0
@@ -135,13 +135,13 @@ class Game(object):
             "players": [{"name": p.name, "gid": p.gindex} for p in self.players],
             "data": self.level.compressed
         })
-      
+
         print(self.title, "started")
 
     def stop(self):
         self.started = False
         self.finished = True
-        
+
         close_room(self.room)
         print(self.title, "stopped")
 
@@ -179,7 +179,7 @@ class Game(object):
         # Remove all players
         for player in self.players:
             self.removeplayer(player, goodbye=False)
-        
+
         send(self.room, msg.endgame, wins)
 
         # Stop game
@@ -244,16 +244,29 @@ def recieve(message):
     game = player.game
     data = unpack(message)
     info = data[1]
-    
+
     if data[0] == msg.update:
         player.update(info[b"x"], info[b"y"], info[b"vx"], info[b"vy"])
     elif data[0] == msg.login:
         #TODO: login using GameJolt API
         assert player not in waitqueue
         assert game == None
-        if len(info) > 0:
-            player.name = info.decode()
-        waitqueue.append(player)
+        nickname = info.decode()
+
+        # Verify nickname
+        if len(nickname) < 3 or len(nickname) > 8:
+            send(player.sid, msg.login,
+                 "Name must be between 3 and 8 characters long!")
+            nickname = ""
+        for char in nickname:
+            if char not in string.ascii_letters and char not in string.digits:
+                send(player.sid, msg.login, "Name cannot contain '%s'!" % char)
+                nickname = ""
+                break
+
+        # If no issue, add to waitqueue
+        if nickname:
+            player.name = nickname
     elif data[0] == msg.win:
         assert game
         if player.win == None:
@@ -295,7 +308,7 @@ def disconnect():
         player.game.removeplayer(player)
     else:
         # Remove player from waitqueue
-        if player in waitqueue: 
+        if player in waitqueue:
             waitqueue.remove(player)
 
     io.leave_room(player.room)
@@ -317,7 +330,7 @@ def gameloop():
                 del game
             else:
                 game.update()
-                
+
         # Update game queue
         for player in waitqueue:
             if len(games) <= maxgames:

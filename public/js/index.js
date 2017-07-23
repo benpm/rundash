@@ -41,7 +41,7 @@ const keyboard = {
 		">": 62,
 		"?": 63,
 		"@": 64,
-		A: 65,
+		home: 65,
 		B: 66,
 		C: 67,
 		D: 68,
@@ -126,7 +126,7 @@ $(document).keyup(function (event) {
 	keyboard.keys[keyboard.keymap[event.key.toLowerCase()]] = 0;
 });
 $(window).resize(function () {
-	if (game.status == "game") cam.zoom();
+	if (game.status != "loading") cam.zoom();
 });
 const touch = {
 	right: false,
@@ -179,8 +179,9 @@ $(document).on("touchmove", function () {
 const address = location.href;
 const sock = io.connect(address);
 const sp = sprintf;
-const body = $(document.body)
+const body = $(document.body);
 const gbody = $("#game");
+const $msg = $("#msg");
 const login = $("#login");
 const loginface = $("#login .player");
 const infoelem = $("#i");
@@ -204,6 +205,14 @@ const msg = {
 	win: 8,
 	dead: 9
 };
+
+function dropdown(message) {
+	$msg.text(message);
+	$msg.removeClass("dropdown");
+	setTimeout(function () {
+		$msg.addClass("dropdown")
+	}, 100);
+}
 
 function cubicHermite(p0, v0, p1, v1, t, f) {
 	var ti = (t - 1),
@@ -275,6 +284,8 @@ sock.on("msg", function (message) {
 				actor.nvx = info.vx[i];
 				actor.nvy = info.vy[i];
 			}
+			Actor.maxinterp = Actor.countinterp;
+			Actor.countinterp = 0;
 			infoelem.text(sp("%d seconds left", info.time));
 			break;
 		case msg.join:
@@ -335,6 +346,10 @@ sock.on("msg", function (message) {
 			break;
 		case msg.win:
 			console.log("win: %.2f seconds", info.time / 20);
+			break;
+		case msg.login:
+			console.log(info);
+			dropdown(info);
 			break;
 	}
 });
@@ -428,7 +443,8 @@ var stage = {
 		}
 	},
 	create: function (data) {
-		var minx = 0, miny = 0;
+		var minx = 0,
+			miny = 0;
 		var props = JSON.parse(data).props;
 		for (var i = 0; i < props.length; i++) {
 			new Prop(props[i].type,
@@ -442,8 +458,6 @@ var stage = {
 		minx -= 1000;
 		miny -= 1000;
 		this.bound(minx, miny);
-		cam.offsetx = -minx;
-		cam.offsety = -miny;
 	},
 	findByIndex: function (gid) {
 		return this.actors.findIndex(function (actor) {
@@ -465,6 +479,8 @@ var stage = {
 	bound: function (minx, miny) {
 		gbody.css("left", -Math.min(0, minx) + "px");
 		gbody.css("top", -Math.min(0, miny) + "px");
+		cam.offsetx = -minx;
+		cam.offsety = -miny;
 	},
 	timer: 0
 };
@@ -559,7 +575,10 @@ const cam = {
 				-this.x, -this.y
 			)
 		); */
-		window.scrollTo(this.offsetx + this.x, this.offsety + this.y);
+		if (!this.rot)
+			window.scrollTo(this.offsetx + this.x, this.offsety + this.y);
+		else
+			window.scrollTo(this.offsety + this.y, this.offsetx + this.x);
 	},
 	zoom: function () {
 		var rotchange = this.rot;
@@ -583,8 +602,10 @@ const cam = {
 		this.y = lerp(this.y, this.fy(), this.speed);
 	},
 	reset: function () {
-		this.x = this.fx();
-		this.y = this.fy();
+		if (this.target) {
+			this.x = this.fx();
+			this.y = this.fy();
+		}
 		if (game.status == "login") this.y *= 1.5;
 		this.update();
 	},
@@ -709,10 +730,10 @@ function Actor(type, x, y, w, h, name, sid, gid) {
 				}
 				break;
 			case "friend":
-				this.interp = lerp(this.interp, 1, 0.25);
+				this.interp += (1 / Actor.maxinterp) * 0.8;
 				cubicHermite(
 					[this.x, this.y], [this.vx, this.vy], [this.nx, this.ny], [this.nvx, this.nvy],
-					this.interp, this.npos
+					Math.min(this.interp, 1), this.npos
 				)
 				this.dx = this.nvx;
 				this.dy = this.nvy;
@@ -751,6 +772,8 @@ function Actor(type, x, y, w, h, name, sid, gid) {
 
 	if (name) this.seedface(name);
 }
+Actor.maxinterp = 3
+Actor.countinterp = 0
 
 function gameloop() {
 	window.requestAnimationFrame(gameloop);
@@ -758,7 +781,10 @@ function gameloop() {
 
 	switch (game.status) {
 		case "game":
-			if (stage) stage.update();
+			if (stage) {
+				stage.update();
+				Actor.countinterp++;
+			}
 			cam.update();
 			if (ticks % 3 == 0) send(msg.update, {
 				x: player.x,
@@ -772,6 +798,9 @@ function gameloop() {
 				player.seedface(login.find("input").val());
 				loginface.text(player.face);
 			}
+			if (keyboard.pressed("home")) {
+				send(msg.login, "player");
+			}
 			break;
 	}
 
@@ -783,4 +812,5 @@ function gameloop() {
 }
 
 game.setstatus("loading");
+cam.zoom();
 window.requestAnimationFrame(gameloop);
