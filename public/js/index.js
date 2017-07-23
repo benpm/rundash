@@ -1,3 +1,5 @@
+"use strict";
+
 /* globals $, msgpack, sprintf, io, pako */
 
 const keyboard = {
@@ -284,8 +286,8 @@ sock.on("msg", function (message) {
 				actor.nvx = info.vx[i];
 				actor.nvy = info.vy[i];
 			}
-			Actor.maxinterp = Actor.countinterp;
-			Actor.countinterp = 0;
+			ActorMaxInterp = ActorCountInterp;
+			ActorCountInterp = 0;
 			infoelem.text(sp("%d seconds left", info.time));
 			break;
 		case msg.join:
@@ -620,6 +622,8 @@ const cam = {
 };
 var ticks = 0;
 var player = new Actor("player", 0, 0, 65, 65);
+var ActorMaxInterp = 3
+var ActorCountInterp = 0
 
 //Constructor Objects
 function Prop(type, x, y, w, h, text) {
@@ -730,7 +734,7 @@ function Actor(type, x, y, w, h, name, sid, gid) {
 				}
 				break;
 			case "friend":
-				this.interp += (1 / Actor.maxinterp) * 0.8;
+				this.interp += (1 / ActorMaxInterp) * 0.8;
 				cubicHermite(
 					[this.x, this.y], [this.vx, this.vy], [this.nx, this.ny], [this.nvx, this.nvy],
 					Math.min(this.interp, 1), this.npos
@@ -772,8 +776,6 @@ function Actor(type, x, y, w, h, name, sid, gid) {
 
 	if (name) this.seedface(name);
 }
-Actor.maxinterp = 3
-Actor.countinterp = 0
 
 function gameloop() {
 	window.requestAnimationFrame(gameloop);
@@ -783,7 +785,7 @@ function gameloop() {
 		case "game":
 			if (stage) {
 				stage.update();
-				Actor.countinterp++;
+				ActorCountInterp += 1;
 			}
 			cam.update();
 			if (ticks % 3 == 0) send(msg.update, {

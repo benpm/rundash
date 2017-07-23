@@ -267,6 +267,8 @@ def recieve(message):
         # If no issue, add to waitqueue
         if nickname:
             player.name = nickname
+            print(nickname, "logged in")
+            waitqueue.append(player)
     elif data[0] == msg.win:
         assert game
         if player.win == None:
