@@ -90,7 +90,7 @@ class Game(object):
 
     def addplayer(self, player):
         assert self.started == False
-        assert player.game == None
+        assert player.game == None, player.name
         assert player.room == "lobby"
 
         # Add player to room
@@ -108,8 +108,8 @@ class Game(object):
             "y": self.level.spawny
         })
 
+        self.players.append(player)        
         print(self.title, player.name, "joined")
-        self.players.append(player)
 
     def removeplayer(self, player, goodbye=True):
         assert player.game == self, player.game.title
@@ -119,7 +119,6 @@ class Game(object):
             self.players.remove(player)
 
         print(self.title, player.name, "exited")
-
         set_room(player, "lobby")
 
         player.game = None
@@ -308,18 +307,22 @@ def disconnect():
     if player.game:
         # Remove player from their game
         player.game.removeplayer(player)
-    else:
-        # Remove player from waitqueue
-        if player in waitqueue:
-            waitqueue.remove(player)
 
-    io.leave_room(player.room)
+    # Remove player from waitqueue
+    if player in waitqueue:
+        waitqueue.remove(player)
+
+    for room in io.rooms(player.sid):
+        leave_room(player, room)
+
     players.pop(player.sid)
 
 # Main game loop
 def gameloop():
     "The main game loop"
     dtick = 0
+    game_number = 0
+    
     print("[SERVER]", "started gameloop")
     while True:
         # Start timer
@@ -345,7 +348,8 @@ def gameloop():
                         game.addplayer(player)
                         break
                 else:
-                    game = Game(len(games), TICK_SEC, GAME_TICKS)
+                    game = Game(game_number, TICK_SEC, GAME_TICKS)
+                    game_number += 1
                     game.addplayer(player)
 
                 break

@@ -54,6 +54,12 @@ class Player(Actor):
 
         # Game Race Timer
         self.timer = 0
+    
+    def reset_game_state(self):
+        self.gindex = -1
+        self.game = None
+        self.win = None
+        self.timer = 0
 
 class Win(object):
     "Represents a win in a game"
@@ -69,4 +75,3 @@ class Win(object):
             "time": floor(self.time / TICK_SEC),
             "sid": self.player.sid
         }
-
