@@ -299,7 +299,7 @@ sock.on("msg", function (message) {
 			break;
 		case msg.leave:
 			console.log("player %d left", info.index);
-			stage.removeByIndex(info.index);
+			if (info.index != player.gid) stage.removeByIndex(info.index);
 			break;
 		case msg.endgame:
 			console.log("game ended");
