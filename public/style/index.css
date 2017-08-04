@@ -46,6 +46,10 @@ body {
 	margin: 0;
 	padding: 0;
 	overflow: hidden;
+	height: 10000px;
+	width: 10000px;
+	font-family: "Quicksand";
+	background: #3C4C4F;
 }
 
 #game {
@@ -53,8 +57,6 @@ body {
 	top: 0;
 	left: 0;
 	overflow: visible;
-	top: 0;
-	left: 0;
 }
 
 #i {
@@ -163,10 +165,6 @@ div.goal {
 /* Login */
 *::selection {
 	background: #7A9E9F;
-}
-body {
-	font-family: "Quicksand";
-	background: #3C4C4F;
 }
 #login {
 	position: absolute;
@@ -368,8 +366,9 @@ p#placement.winner {
 	background-color: #334143;
 }
 .landscape .nextbutton {
-	width: calc(6vmax + 6vmin);
-	height: calc(6vmax + 6vmin);
+	width: calc(7vmax + 7vmin);
+	height: calc(7vmax + 7vmin);
+	outline: solid 32px #334143;
 }
 
 /* Helpers */

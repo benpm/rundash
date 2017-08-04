@@ -178,6 +178,7 @@ $(document).on("touchmove", function () {
 		touch.lefthold = true;
 });
 
+const AUTO_LANDSCAPE = false;
 const address = location.href;
 const sock = io.connect(address);
 const sp = sprintf;
@@ -283,6 +284,8 @@ sock.on("msg", function (message) {
 				actor.interp = 0;
 				actor.nx = info.x[i];
 				actor.ny = info.y[i];
+				actor.vx = actor.nvx;
+				actor.vy = actor.nvy;
 				actor.nvx = info.vx[i];
 				actor.nvy = info.vy[i];
 			}
@@ -506,6 +509,7 @@ const game = (function () {
 			this.status = status;
 			switch (status) {
 				case "loading":
+					cam.update();
 					$(".loading").show();
 					$(".disconnected").hide();
 					leaderboard.hide();
@@ -538,6 +542,8 @@ const game = (function () {
 					infoelem.hide();
 					gbody.hide();
 					leaderboard.show();
+					cam.target = null;
+					cam.update();
 					break;
 				case "newgame":
 					send(msg.game, 0);
@@ -580,10 +586,14 @@ const cam = {
 				-this.x, -this.y
 			)
 		); */
-		if (!this.rot)
-			window.scrollTo(this.offsetx + this.x, this.offsety + this.y);
-		else
-			window.scrollTo(this.offsety + this.y, this.offsetx + this.x);
+		if (!this.target) {
+			window.scrollTo(0, 0);
+		} else {
+			if (!this.rot)
+				window.scrollTo(this.offsetx + this.x, this.offsety + this.y);
+			else
+				window.scrollTo(this.offsety + this.y, this.offsetx + this.x);
+		}
 	},
 	zoom: function () {
 		var rotchange = this.rot;
@@ -594,7 +604,7 @@ const cam = {
 		this.zoomlvl.toFixed(1);
 		gbody.css("transform", sp("scale(%1$f, %1$f)", this.zoomlvl));
 		this.reset();
-		if (rotchange) {
+		if (rotchange && AUTO_LANDSCAPE) {
 			if (this.rot) {
 				body.addClass("landscape");
 			} else {

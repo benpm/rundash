@@ -83,7 +83,8 @@ class Game(object):
         self.gametime = 0
 
         importlib.reload(generation)
-        self.level = generation.build_level(random.choice(["horizontal", "vertical"]))
+        #self.level = generation.build_level(random.choice(["horizontal", "vertical"]))
+        self.level = generation.build_level("classic")
 
         games.append(self)
         print(self.title, "created")
@@ -108,7 +109,7 @@ class Game(object):
             "y": self.level.spawny
         })
 
-        self.players.append(player)        
+        self.players.append(player)
         print(self.title, player.name, "joined")
 
     def removeplayer(self, player, goodbye=True):
@@ -322,7 +323,7 @@ def gameloop():
     "The main game loop"
     dtick = 0
     game_number = 0
-    
+
     print("[SERVER]", "started gameloop")
     while True:
         # Start timer
