@@ -378,7 +378,7 @@ function collision(actor) {
 			actor.x + actor.w >= prop.x &&
 			actor.x <= prop.x + prop.w
 		) {
-			if (prop.type == "spike") {
+			if (prop.type.search("spike") > -1) {
 				actor.die();
 				return;
 			}
@@ -534,6 +534,7 @@ const game = (function () {
 					$(".disconnected").hide();
 					infoelem.show();
 					gbody.show();
+					cam.target = player
 					cam.zoom();
 					cam.reset();
 					break;
@@ -733,7 +734,7 @@ function Actor(type, x, y, w, h, name, sid, gid) {
 					this.canjump = false;
 				}
 				this.vy += this.gravity;
-				if (this.y > 1000) this.die();
+				if (this.y > 3000) this.die();
 				this.dx = this.vx;
 				this.dy = this.vy;
 				this.move(this.vx, this.vy);

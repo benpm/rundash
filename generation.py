@@ -40,18 +40,24 @@ class Level(object):
         x += w + 5
 
         # Varying ingredients
-        for i in range(20):
-            newtype = random.choices(["horizontal", "stairs", "wall"], [100, 10, 5])[0]
+        for i in range(15):
+            newtype = random.choices(
+                ["horizontal", "stairs", "wall", "tunnel", "ladder"],
+                [100, 5, 15, 15, 10])[0]
             if newtype == "horizontal":
                 n = IHorizontal(x, y, difficulty, 15, 40)
             elif newtype == "stairs":
                 n = IStairs(x, y, difficulty,
-                            random.randint(5, 10), 8, random.randint(-16, -4))
+                            random.randint(5, 10), 8, random.randint(-12, 12))
             elif newtype == "wall":
-                n = IWall(x, y, difficulty, self.maxh - 1)
+                n = IWall(x, y, difficulty, self.maxv - 1)
+            elif newtype == "tunnel":
+                n = ITunnel(x, y, difficulty, random.randint(100, 200))
+            elif newtype == "ladder":
+                n = ILadder(x, y, difficulty, random.randint(2, 6) * 2)
             n.place(self)
             x = n.x2 + random.randint(10, self.maxh)
-            y = n.y2 + random.randint(-self.maxv, self.maxv * 2)
+            y = n.y2 + random.choice([-1, 1]) * random.randint(0, self.maxv)
 
         # Goal
         self.goal = Prop(x + 10, y - 20, 4, 30, "platform goal")
@@ -205,6 +211,9 @@ class Prop(object):
         self.width = width * Level.GRID
         self.height = height * Level.GRID
 
+        self.x2 = x + width
+        self.y2 = y + height
+
         self.type = proptype
 
     def update(self, x, y):
@@ -258,7 +267,7 @@ class IStairs(Ingredient):
             self.add(Prop(ix, iy, w, 4, "platform"))
             self.x2 = ix + w
             self.y2 = iy
-            if not lastspike and random.randint(0, 15) < difficulty and 1 < i < steps - 3:
+            if abs(dy) < 8 and not lastspike and random.randint(0, 10) < difficulty and 1 < i < steps - 3:
                 self.add(Prop(ix + w // 2 - 2, iy - 5, 5, 5, "spike"))
                 lastspike = True
             lastspike = False
@@ -274,25 +283,72 @@ class IHorizontal(Ingredient):
         self.add(Prop(x, y, w, 4, "platform"))
         self.x2 = x + w
 
-        if random.randint(0, 12) < difficulty and w > 20:
-            self.add(Prop(x + random.randint(10, w - 10), y - 5, random.choice([5, 10, 15, 20]), 5, "spike"))
+        if random.randint(0, 10) < difficulty and w > 20:
+            self.add(Prop(x + random.randint(10, w - 10), y - 5, random.choice([1, w // 15]) * 5, 5, "spike"))
+        
+        if self.props[-1].type == "spike" and self.props[-1].x2 > self.x2 - 5:
+            self.x2 = self.props[-1].x // Level.GRID
 
 class IWall(Ingredient):
     "Vertical jumpable wall"
 
-    def __init__(self, x, y, difficulty, maxh):
+    def __init__(self, x, y, difficulty, maxv):
         super().__init__("wall", x, y, difficulty)
 
         # Generate
         w = random.randint(16, 64)
-        h = round(difficulty * .1 * maxh) - random.randint(0, maxh // 3)
-        self.add(
-            Prop(x, y, w, 2, "platform"))
-        self.add(Prop(x + w // 2, y - 2 - h, 4, h, "platform"))
+        h = random.randint(maxv - 4, maxv - 1)
+        self.add(Prop(x, y, w, 4, "platform"))
+        self.add(Prop(x + w // 2, y - h + 6, 5, h - 3, "platform"))
+        self.add(Prop(x + w // 2, y - h + 2, 5, 5, "spike"))
         self.x2 = x + w
 
         if difficulty > 2:
-            self.add(
-                Prop(x + w // 2 - 5,
-                    y - random.randint(5, h-5),
-                    5, random.randint(1, w // 3) * 5, "spike left"))
+            for i in range(random.randint(0, h // 30)):
+                self.add(
+                    Prop(x + w // 2 -5, y -
+                         random.randint(5, h - 5), 5, 5, "spike left"))
+            for i in range(random.randint(0, h // 30)):
+                self.add(
+                    Prop(x + w // 2 + 5, y -
+                         random.randint(5, h - 5), 5, 5, "spike right"))
+
+class ITunnel(Ingredient):
+    "Passable tunnel"
+
+    def __init__(self, x, y, difficulty, length):
+        super().__init__("tunnel", x, y, difficulty)
+
+        # Generate
+        h = random.randint(25, 35)
+        self.add(Prop(x, y, length, 4, "platform"))
+        self.add(Prop(x, y - h, length, 4, "platform"))
+        self.add(Prop(x + 5, y - h - 5, round(length/5 - 2) * 5, 5, "spike"))
+
+        for i in range(1, difficulty * 2):
+            if random.random() < .50:
+                self.add(
+                    Prop(x + round((5 + ((i * .9) / difficulty) * length) / 10) * 5,
+                        y - 5, 5, 5, "spike"))
+            else:
+                self.add(
+                    Prop(x + round((5 + ((i * .9) / difficulty) * length) / 10) * 5,
+                        y - h + 4, 5, 5, "spike down"))
+
+        self.x2 = x + length
+
+class ILadder(Ingredient):
+    "Series of horizontal platforms that form a ladder"
+
+    def __init__(self, x, y, difficulty, steps):
+        super().__init__("ladder", x, y, difficulty)
+
+        # Generate
+        for i in range(steps):
+            if i % 2 == 0:
+                self.add(Prop(x, y - i * 15, 12, 4, "platform"))
+            else:
+                self.add(Prop(x + 40, y - i * 15, 12, 4, "platform"))
+
+        self.x2 = self.props[-1].x2
+        self.y2 = self.props[-1].y2 - 4

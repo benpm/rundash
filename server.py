@@ -121,10 +121,7 @@ class Game(object):
 
         print(self.title, player.name, "exited")
         set_room(player, "lobby")
-
-        player.game = None
-        player.gindex = -1
-        player.timer = 0
+        player.reset_game_state()
 
     def start(self):
         self.started = True

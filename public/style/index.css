@@ -96,6 +96,17 @@ div.platform::after {
 	background-repeat: repeat-x;
 	background-clip: 20px 20px;
 }
+.spike.left {
+	background-image: url("../img/spike-left.svg");
+	background-repeat: repeat-y;
+}
+.spike.right {
+	background-image: url("../img/spike-right.svg");
+	background-repeat: repeat-y;
+}
+.spike.down {
+	background-image: url("../img/spike-down.svg");
+}
 .grave {
 	position: absolute;
 	background: #334143;
