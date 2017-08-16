@@ -519,6 +519,8 @@ const game = (function () {
 					$(".loading").hide();
 					$(".disconnected").hide();
 					login.show();
+					cam.target = null;
+					cam.reset();
 					break;
 				case "lobby":
 					$(".loading").show();

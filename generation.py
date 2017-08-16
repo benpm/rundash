@@ -11,6 +11,7 @@ class Level(object):
     GRID = 10
     def __init__(self, type_, grid = 10, maxh = 300, maxv = 200):
         self.GRID = grid
+        self.budget = 20
         self.maxh = maxh / grid
         self.maxv = maxv / grid
 
@@ -27,6 +28,7 @@ class Level(object):
             self.generate_classic()
 
     def generate_classic(self):
+        self.budget = 20
         x = -7
         y = 10
         w = 20
@@ -39,11 +41,11 @@ class Level(object):
         self.insert(Prop(x, y, w, h, "platform"))
         x += w + 5
 
-        # Varying ingredients
-        for i in range(15):
+        # Create within "budget"
+        while self.budget > 0:
             newtype = random.choices(
-                ["horizontal", "stairs", "wall", "tunnel", "ladder"],
-                [100, 5, 15, 15, 10])[0]
+                ["horizontal", "stairs", "wall", "tunnel", "ladder", "facade"],
+                [100, 5, 15, 15, 10, 15])[0]
             if newtype == "horizontal":
                 n = IHorizontal(x, y, difficulty, 15, 40)
             elif newtype == "stairs":
@@ -55,6 +57,8 @@ class Level(object):
                 n = ITunnel(x, y, difficulty, random.randint(100, 200))
             elif newtype == "ladder":
                 n = ILadder(x, y, difficulty, random.randint(2, 6) * 2)
+            elif newtype == "facade":
+                n = IFacade(x, y, difficulty)
             n.place(self)
             x = n.x2 + random.randint(10, self.maxh)
             y = n.y2 + random.choice([-1, 1]) * random.randint(0, self.maxv)
@@ -242,6 +246,7 @@ class Ingredient(object):
         self.x2 = x
         self.y2 = y
         self.props = []
+        self.cost = 0
 
     def add(self, prop):
         self.props.append(prop)
@@ -249,6 +254,7 @@ class Ingredient(object):
     def place(self, level):
         "Places props in given level"
         level.props.extend(self.props)
+        level.budget -= self.cost
 
 
 # Ingredient subclasses
@@ -257,6 +263,7 @@ class IStairs(Ingredient):
 
     def __init__(self, x, y, difficulty, steps, dx, dy):
         super().__init__("stairs", x, y, difficulty)
+        self.cost = 2
 
         # Generate
         lastspike = False
@@ -277,6 +284,7 @@ class IHorizontal(Ingredient):
 
     def __init__(self, x, y, difficulty, widthmin, widthmax):
         super().__init__("horizontal", x, y, difficulty)
+        self.cost = 1
 
         # Generate
         w = random.randint(widthmin, widthmax)
@@ -285,7 +293,7 @@ class IHorizontal(Ingredient):
 
         if random.randint(0, 10) < difficulty and w > 20:
             self.add(Prop(x + random.randint(10, w - 10), y - 5, random.choice([1, w // 15]) * 5, 5, "spike"))
-        
+
         if self.props[-1].type == "spike" and self.props[-1].x2 > self.x2 - 5:
             self.x2 = self.props[-1].x // Level.GRID
 
@@ -294,6 +302,7 @@ class IWall(Ingredient):
 
     def __init__(self, x, y, difficulty, maxv):
         super().__init__("wall", x, y, difficulty)
+        self.cost = 2
 
         # Generate
         w = random.randint(16, 64)
@@ -318,21 +327,22 @@ class ITunnel(Ingredient):
 
     def __init__(self, x, y, difficulty, length):
         super().__init__("tunnel", x, y, difficulty)
+        self.cost = 4
 
         # Generate
-        h = random.randint(25, 35)
+        h = random.randint(30, 40)
         self.add(Prop(x, y, length, 4, "platform"))
         self.add(Prop(x, y - h, length, 4, "platform"))
         self.add(Prop(x + 5, y - h - 5, round(length/5 - 2) * 5, 5, "spike"))
 
-        for i in range(1, difficulty * 2):
+        for i in range(1, round(difficulty * 1.5)):
             if random.random() < .50:
                 self.add(
-                    Prop(x + round((5 + ((i * .9) / difficulty) * length) / 10) * 5,
+                    Prop(x + round((5 + ((i * .9) / difficulty) * length) / 7) * 5,
                         y - 5, 5, 5, "spike"))
             else:
                 self.add(
-                    Prop(x + round((5 + ((i * .9) / difficulty) * length) / 10) * 5,
+                    Prop(x + round((5 + ((i * .9) / difficulty) * length) / 7) * 5,
                         y - h + 4, 5, 5, "spike down"))
 
         self.x2 = x + length
@@ -342,13 +352,32 @@ class ILadder(Ingredient):
 
     def __init__(self, x, y, difficulty, steps):
         super().__init__("ladder", x, y, difficulty)
+        self.cost = 3
 
-        # Generate
+        # Generate ladder-steps
         for i in range(steps):
             if i % 2 == 0:
                 self.add(Prop(x, y - i * 15, 12, 4, "platform"))
+                if random.random() < difficulty * 0.085:
+                    self.add(Prop(x + 1, y - i * 15 - 5, 5, 5, "spike"))
             else:
                 self.add(Prop(x + 40, y - i * 15, 12, 4, "platform"))
+                if random.random() < difficulty * 0.085:
+                    self.add(Prop(x + 46, y - i * 15 - 5, 5, 5, "spike"))
 
+        # Set last step as endpoint
         self.x2 = self.props[-1].x2
         self.y2 = self.props[-1].y2 - 4
+
+class IFacade(Ingredient):
+    "Single vertical platform"
+
+    def __init__(self, x, y, difficulty):
+        super().__init__("wall", x, y, difficulty)
+        self.cost = 1
+
+        # Generate
+        self.add(Prop(x, y, 4, 35, "platform"))
+        if random.random() < difficulty * .1:
+            self.add(Prop(x-5, y+5, 5, 25, "spike left"))
+            self.add(Prop(x+4, y+5, 5, 25, "spike right"))
