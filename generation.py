@@ -31,7 +31,7 @@ class Level(object):
         self.budget = 20
         x = -7
         y = 10
-        w = 20
+        w = 40
         h = 4
         difficulty = 5
         n = None
@@ -39,13 +39,14 @@ class Level(object):
 
         # Starting platform
         self.insert(Prop(x, y, w, h, "platform"))
-        x += w + 5
+        self.insert(Prop(x, y - self.maxv, 4, self.maxv + 3, "platform"))
+        x += w + self.maxh // 2
 
         # Create within "budget"
         while self.budget > 0:
             newtype = random.choices(
-                ["horizontal", "stairs", "wall", "tunnel", "ladder", "facade"],
-                [100, 5, 15, 15, 10, 15])[0]
+                ["horizontal", "stairs", "wall", "tunnel", "ladder", "facade", "tube"],
+                [100, 10, 15, 15, 10, 25, 10])[0]
             if newtype == "horizontal":
                 n = IHorizontal(x, y, difficulty, 15, 40)
             elif newtype == "stairs":
@@ -59,12 +60,14 @@ class Level(object):
                 n = ILadder(x, y, difficulty, random.randint(2, 6) * 2)
             elif newtype == "facade":
                 n = IFacade(x, y, difficulty)
+            elif newtype == "tube":
+                n = ITube(x, y, difficulty, random.randint(15, 45))
             n.place(self)
             x = n.x2 + random.randint(10, self.maxh)
             y = n.y2 + random.choice([-1, 1]) * random.randint(0, self.maxv)
 
         # Goal
-        self.goal = Prop(x + 10, y - 20, 4, 30, "platform goal")
+        self.goal = Prop(x + 10, y - 20, 4, 40, "platform goal")
         self.insert(self.goal)
 
         # Compress
@@ -357,13 +360,17 @@ class ILadder(Ingredient):
         # Generate ladder-steps
         for i in range(steps):
             if i % 2 == 0:
-                self.add(Prop(x, y - i * 15, 12, 4, "platform"))
-                if random.random() < difficulty * 0.085:
+                self.add(Prop(x, y - i * 15, 14, 4, "platform"))
+                if i > 0 and random.random() < difficulty * 0.085:
                     self.add(Prop(x + 1, y - i * 15 - 5, 5, 5, "spike"))
+                if i > 0 and random.random() < difficulty * 0.085:
+                    self.add(Prop(x + 2, y - i * 15 + 4, 10, 5, "spike down"))
             else:
-                self.add(Prop(x + 40, y - i * 15, 12, 4, "platform"))
-                if random.random() < difficulty * 0.085:
-                    self.add(Prop(x + 46, y - i * 15 - 5, 5, 5, "spike"))
+                self.add(Prop(x + 40, y - i * 15, 14, 4, "platform"))
+                if i > 0 and random.random() < difficulty * 0.085:
+                    self.add(Prop(x + 48, y - i * 15 - 5, 5, 5, "spike"))
+                if i > 0 and random.random() < difficulty * 0.085:
+                    self.add(Prop(x + 42, y - i * 15 + 4, 10, 5, "spike down"))
 
         # Set last step as endpoint
         self.x2 = self.props[-1].x2
@@ -381,3 +388,24 @@ class IFacade(Ingredient):
         if random.random() < difficulty * .1:
             self.add(Prop(x-5, y+5, 5, 25, "spike left"))
             self.add(Prop(x+4, y+5, 5, 25, "spike right"))
+
+class ITube(Ingredient):
+    "Vertical tube"
+
+    def __init__(self, x, y, difficulty, height):
+        super().__init__("tunnel", x, y, difficulty)
+        self.cost = 3
+
+        # Generate
+        w = random.randint(25, 40)
+        self.add(Prop(x, y, 4, height + 28, "platform"))
+        self.add(Prop(x + w, y - 35, 4, height + 35, "platform"))
+        self.add(
+            Prop(x + 4, y + 2, 5, ((height + 22) // 5) * 5, "spike right"))
+        self.add(
+            Prop(x + w - 5, y - 33, 5, ((height + 32) // 5) * 5, "spike left"))
+
+        self.add(Prop(x, y + height + 25, w + 10, 4, "platform"))
+
+        self.x2 = self.props[-1].x2
+        self.y2 = self.props[-1].y2 - 4
