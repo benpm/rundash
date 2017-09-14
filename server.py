@@ -1,3 +1,4 @@
+import sys
 from math import *
 import string
 import time
@@ -11,6 +12,9 @@ import generation
 import importlib
 import random
 from game_classes import Player, Actor, Win
+
+# Usage
+print("Usage: %s [TTL (seconds)]" % sys.argv[0])
 
 # Helper functions
 def pack(obj):
@@ -58,6 +62,7 @@ TICK_SEC = 20
 TICK = 1 / TICK_SEC
 GAME_TICKS = TICK_SEC * 60
 TTL = TICK_SEC * 4
+if len(sys.argv) > 1: TTL = int(sys.argv[1]) * TICK_SEC
 HSPEED = 6.5
 VSPEED = 18
 GRAVITY = 0.8
@@ -65,6 +70,7 @@ DRAG = 0.35
 HVEL = HSPEED * (pow(DRAG, 4) + pow(DRAG, 3) + pow(DRAG, 2) + DRAG + 1)
 msg = enum("msg", "join leave game update login init endgame win dead")
 
+# Main Game class
 class Game(object):
     def __init__(self, game_num, tick_sec, game_ticks):
         self.num = game_num
@@ -122,6 +128,12 @@ class Game(object):
         print(self.title, player.name, "exited")
         set_room(player, "lobby")
         player.reset_game_state()
+    
+    def sendplayerdeath(self, player):
+        send(self.room, msg.dead, {
+            "gid": player.gindex, 
+            "x": player.x,
+            "y": player.y})
 
     def start(self):
         self.started = True
@@ -223,6 +235,7 @@ class Game(object):
         for player in self.players:
             player.timer += 1
 
+## Server setup
 # Root serving
 @app.route("/")
 def index():
@@ -279,7 +292,7 @@ def recieve(message):
         waitqueue.append(player)
     elif data[0] == msg.dead:
         assert game != None
-        player.timer = 0
+        player.death()
 
 # Websocket connect
 @sock.on("connect")

@@ -31,6 +31,7 @@ class Level(object):
         self.budget = 20
         x = -7
         y = 10
+        maxy = 10
         w = 40
         h = 4
         difficulty = 5
@@ -65,10 +66,15 @@ class Level(object):
             n.place(self)
             x = n.x2 + random.randint(10, self.maxh)
             y = n.y2 + random.choice([-1, 1]) * random.randint(0, self.maxv)
+            if y > maxy: maxy = y
 
         # Goal
         self.goal = Prop(x + 10, y - 20, 4, 40, "platform goal")
         self.insert(self.goal)
+
+        # Floor spikes
+        self.insert(Prop(-100, maxy + 35, x + 150, 4, "platform"))
+        self.insert(Prop(-98, maxy + 30, x + 146, 5, "spike"))
 
         # Compress
         self.compress()
@@ -361,15 +367,17 @@ class ILadder(Ingredient):
         for i in range(steps):
             if i % 2 == 0:
                 self.add(Prop(x, y - i * 15, 14, 4, "platform"))
-                if i > 0 and random.random() < difficulty * 0.085:
+                if i <= 0 or i >= steps - 2: continue
+                if random.random() < difficulty * 0.085:
                     self.add(Prop(x + 1, y - i * 15 - 5, 5, 5, "spike"))
-                if i > 0 and random.random() < difficulty * 0.085:
+                if random.random() < difficulty * 0.085:
                     self.add(Prop(x + 2, y - i * 15 + 4, 10, 5, "spike down"))
             else:
                 self.add(Prop(x + 40, y - i * 15, 14, 4, "platform"))
-                if i > 0 and random.random() < difficulty * 0.085:
+                if i <= 0 or i >= steps - 2: continue
+                if random.random() < difficulty * 0.085:
                     self.add(Prop(x + 48, y - i * 15 - 5, 5, 5, "spike"))
-                if i > 0 and random.random() < difficulty * 0.085:
+                if random.random() < difficulty * 0.085:
                     self.add(Prop(x + 42, y - i * 15 + 4, 10, 5, "spike down"))
 
         # Set last step as endpoint

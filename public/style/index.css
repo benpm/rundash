@@ -19,20 +19,94 @@
 	to {transform: rotate(360deg);}
 }
 
+@keyframes sprink {
+	0% {
+		transform: rotate(0deg) scale(0, 0);
+	}
+
+	25% {
+		transform: rotate(0deg) scale(1, 1);
+	}
+
+	100% {
+		transform: rotate(360deg) scale(0, 0);
+	}
+}
+
+@keyframes padshrink {
+	0% {
+		top: 0;
+		left: 0;
+	}
+	100% {
+		width: 0;
+		height: 0;
+		top: 15px;
+		left: 15px;
+	}
+}
+
+@keyframes sprow {
+	from {
+		transform: rotate(360deg) scale(0, 0);
+	}
+	to {
+		transform: rotate(0deg) scale(1, 1);
+	}
+}
+
+@keyframes sprow-delay {
+	0% {
+		transform: rotate(360deg) scale(0, 0);
+	}
+
+	25% {
+		transform: rotate(360deg) scale(0, 0);
+	}
+
+	100% {
+		transform: rotate(0deg) scale(1, 1);
+	}
+}
+
+
 @keyframes dropdown {
 	0% {
 		transform: translatey(-400px);
 	}
 	10% {
-		transform: translatey(0px);
+		transform: translatey(-100px);
 	}
 	90% {
-		transform: translatey(0px);
+		transform: translatey(-100px);
 	}
 	100% {
 		transform: translatey(-400px);
 	}
 }
+
+@keyframes bouncein {
+	from {
+		transform: scale(1.2, 1.2);
+		opacity: 0;
+	}
+	to {
+		transform: scale(1, 1);
+		opacity: 1;
+	}
+}
+
+@keyframes fadein {
+	from {
+		opacity: 0;
+	}
+
+	to {
+		opacity: 1;
+	}
+}
+
+
 
 * {
 	user-select: none;
@@ -121,6 +195,8 @@ div.platform::after {
 	z-index: -2;
 	writing-mode: tb-rl;
 	font-family: "UbuntuMono", monospace;
+	animation: sprow-delay .75s cubic-bezier(.74, .19, .29, 1.3);
+	cursor: default;
 }
 div.goal {
 	background: repeating-linear-gradient(
@@ -148,6 +224,7 @@ div.goal {
 	writing-mode: tb-rl;
 	top: 0;
 	left: 0;
+	cursor: default;
 }
 .player {
 	background: #EEF5DB;
@@ -164,12 +241,24 @@ div.goal {
 	left: 40vmax;
 	width: 20vmax;
 	height: 20vmax;
-	animation: linear spin infinite 2s;
+	animation: linear spin infinite 2s, fadein 0.5s;
 	z-index: 2;
 }
 
 .disconnected {
-	animation: none;
+	animation: bouncein 0.5s cubic-bezier(.74, .19, .29, 1.3);
+}
+
+/* Effects */
+.spinfect {
+	position: absolute;
+	z-index: 2;
+	animation: sprink 0.75s forwards;
+	width: 200px;
+	height: 200px;
+}
+.padshrink {
+	animation: padshrink 0.2s forwards;
 }
 
 
@@ -187,6 +276,8 @@ div.goal {
 	top: 10vmin;
 	color: #B8D8D8;
 	font-size: calc(2vmax + 2vmin);
+	transform: scale(1, 1);
+	animation: bouncein 0.5s cubic-bezier(.74, .19, .29, 1.3);
 }
 #login form {
 	padding: 64px;
@@ -285,6 +376,7 @@ div.goal {
 	color: #B8D8D8;
 	font-size: calc(2vmax + 2vmin);
 	cursor: default;
+	animation: fadein 0.5s;
 }
 table {
 	border-collapse: collapse;
@@ -342,6 +434,7 @@ p#placement {
 	background: #566F70;
 	width: 50%;
 	border-radius: 16px;
+	animation: bouncein 1s cubic-bezier(.74, .19, .29, 1.3);
 }
 p#placement.winner {
 	color: #EEF5DB;
@@ -392,10 +485,10 @@ p#placement.winner {
 #msg {
 	position: fixed;
 	width: 100vmax;
-	height: 10vmin;
+	height: 20vmin;
 	background: #fe5f55;
 	text-align: center;
-	line-height: 10vmin;
+	line-height: 30vmin;
 	color: #EEF5DB;
 	border-radius: 16px;
 	border-top-left-radius: 0;
@@ -404,7 +497,7 @@ p#placement.winner {
 	font-size: 2vmax;
 }
 #msg.dropdown {
-	animation: dropdown 4s forwards;
+	animation: dropdown cubic-bezier(.74, .19, .29, 1.3) 4s forwards;
 }
 .landscape #msg {
 	font-size: 4vmax;

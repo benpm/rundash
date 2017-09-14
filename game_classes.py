@@ -60,6 +60,9 @@ class Player(Actor):
         self.game = None
         self.win = None
         self.timer = 0
+    def death(self):
+        self.timer = 0
+        self.game.sendplayerdeath(self)
 
 class Win(object):
     "Represents a win in a game"

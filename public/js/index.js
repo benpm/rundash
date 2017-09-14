@@ -237,6 +237,10 @@ function cubicHermite(p0, v0, p1, v1, t, f) {
 	return h00 * p0 + h10 * v0 + h01 * p1 + h11 * v1
 }
 
+function dist(x1, y1, x2, y2) {
+	return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+}
+
 function decode(msg) {
 	return msgpack.decode(new Uint8Array(msg.data));
 }
@@ -277,10 +281,11 @@ sock.on("msg", function (message) {
 			}
 			break;
 		case msg.update:
+			//Update actors from server	
 			for (var i = 0; i < info.gid.length; i++) {
 				if (info.gid[i] == player.gid) continue;
 				actor = stage.actors[stage.findByIndex(info.gid[i])];
-				if (!actor) continue;
+				if (!actor || actor.halt) continue;
 				actor.interp = 0;
 				actor.nx = info.x[i];
 				actor.ny = info.y[i];
@@ -288,6 +293,12 @@ sock.on("msg", function (message) {
 				actor.vy = actor.nvy;
 				actor.nvx = info.vx[i];
 				actor.nvy = info.vy[i];
+
+				//Skip to avoid interpolation during teleportation
+				if (dist(actor.x, actor.y, actor.nx, actor.ny) > 100) {
+					actor.x = actor.nx;
+					actor.y = actor.ny;
+				}
 			}
 			ActorMaxInterp = ActorCountInterp;
 			ActorCountInterp = 0;
@@ -356,6 +367,14 @@ sock.on("msg", function (message) {
 			console.log(info);
 			dropdown(info);
 			break;
+		case msg.dead:
+			if (info.gid == player.gid) break;
+			actor = stage.actors[stage.findByIndex(info.gid)];
+			actor.x = info.x + actor.vx * 2;
+			actor.y = info.y + actor.vy * 2;
+			actor.die();
+			console.log("Recieved dead on player ", info.gid);
+			break;	
 	}
 });
 
@@ -692,6 +711,7 @@ function Actor(type, x, y, w, h, name, sid, gid) {
 	this.jumpspeed = 18;
 	this.gravity = 0.8;
 	this.friction = 0.35;
+	this.halt = false;
 
 	//Initialize
 	var dom = $("<div>", {
@@ -725,6 +745,7 @@ function Actor(type, x, y, w, h, name, sid, gid) {
 		);
 	};
 	this.update = function () {
+		if (this.halt) return;	
 		switch (this.type) {
 			case "player":
 				this.vx *= this.friction;
@@ -736,7 +757,7 @@ function Actor(type, x, y, w, h, name, sid, gid) {
 					this.canjump = false;
 				}
 				this.vy += this.gravity;
-				if (this.y > 3000) this.die();
+				if (this.y > 99999) this.die();
 				this.dx = this.vx;
 				this.dy = this.vy;
 				this.move(this.vx, this.vy);
@@ -766,31 +787,75 @@ function Actor(type, x, y, w, h, name, sid, gid) {
 		}
 	};
 	this.die = function () {
-		if (this.type == "player") send(msg.dead, {
-			x: this.x,
-			y: this.y
-		});
-		new Prop("grave", this.x - this.vx, this.y - this.vy, 60, 80, ":(");
+		this.x -= this.vx;
+		this.y -= this.vy;
+		new Prop("grave", this.x + 6, this.y - 10, 60, 80, this.face);
+		new Effect(this.x + this.w / 2, this.y + this.h / 2, "4star.svg");
 		this.vx = this.vy = 0;
-		this.x = 2;
-		this.y = 6;
-		this.move(0, 0);
-		audio.die.play();
+		dom.addClass("padshrink");
+		if (this.type == "player") {
+			audio.die.play();
+			send(msg.dead, {
+				x: this.x,
+				y: this.y
+			});
+			this.suspend(false, 750, true);
+		} else {
+			this.suspend(false, 1000, true);
+		}
 	};
 	this.win = function () {
 		if (this.type != "player") return;
 		this.vx = this.vy = 0;
-		this.x = 2;
-		this.y = 6;
-		this.move(0, 0);
+		new Effect(this.x + this.w / 2, this.y + this.h / 2, "star.svg");
 		send(msg.win, 0);
 		audio.win.play();
+		this.suspend(false, 750, true);
+		dom.addClass("padshrink");
 	};
 	this.delete = function () {
 		dom.remove();
 	};
+	this.hide = function () {
+		dom.hide();
+	};
+	this.unhide = function () {
+		dom.show();
+	};
+	this.suspend = function (hide, time, reset) {
+		cam.speed = 0;
+		this.halt = true;
+		if (hide) this.hide();
+		var that = this;
+		setTimeout(function () { that.unsuspend(reset); }, time);
+	};
+	this.unsuspend = function (reset) {
+		if (reset) {
+			this.x = stage.spawnx;
+			this.y = stage.spawny;
+			this.move(0, 0);
+		}
+		cam.speed = 0.1;
+		this.halt = false;
+		this.unhide();
+		dom.removeClass("padshrink");
+	};
 
 	if (name) this.seedface(name);
+}
+
+function Effect(x, y, image) {
+	var dom = $("<img>", {
+		class: "spinfect",
+		src: "../img/" + image,
+		style: sp("top:%dpx; left:%dpx;", y - 100, x - 100)
+	});
+	gbody.append(dom);
+
+	this.delete = function () {
+		dom.remove();
+	};
+	setTimeout(this.delete, 2000);
 }
 
 function gameloop() {
