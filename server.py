@@ -59,7 +59,7 @@ sock = io.SocketIO(app)
 
 # Globals
 TICK_SEC = 20
-TICK = 1 / TICK_SEC
+TICK = 1.0 / TICK_SEC
 GAME_TICKS = TICK_SEC * 60
 TTL = TICK_SEC * 4
 if len(sys.argv) > 1: TTL = int(sys.argv[1]) * TICK_SEC
@@ -256,12 +256,12 @@ def recieve(message):
     info = data[1]
 
     if data[0] == msg.update:
-        player.update(info[b"x"], info[b"y"], info[b"vx"], info[b"vy"])
+        player.update(info["x"], info["y"], info["vx"], info["vy"])
     elif data[0] == msg.login:
         #TODO: login using GameJolt API
         assert player not in waitqueue
         assert game == None
-        nickname = info.decode()
+        nickname = info
 
         # Verify nickname
         if len(nickname) < 3 or len(nickname) > 8:
@@ -337,7 +337,7 @@ def gameloop():
     print("[SERVER]", "started gameloop")
     while True:
         # Start timer
-        dtick = time.clock()
+        dtick = time.time()
 
         # Update games
         for game in games:
@@ -366,11 +366,11 @@ def gameloop():
                 break
 
         # Wait delta time
-        dtick = time.clock() - dtick
+        dtick = time.time() - dtick
         if dtick < TICK: sock.sleep(TICK - dtick)
 
 # Begin
 if __name__ == "__main__":
     print("[SERVER]", "starting...")
     gamethread = sock.start_background_task(gameloop)
-    sock.run(app, host="0.0.0.0", port=8080)
+    sock.run(app, host="0.0.0.0", port=8000)

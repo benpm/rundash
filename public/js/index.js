@@ -286,19 +286,16 @@ sock.on("msg", function (message) {
 				if (info.gid[i] == player.gid) continue;
 				actor = stage.actors[stage.findByIndex(info.gid[i])];
 				if (!actor || actor.halt) continue;
+				console.log(actor.interp);
 				actor.interp = 0;
+				actor.px = actor.nx;
+				actor.py = actor.ny;
 				actor.nx = info.x[i];
 				actor.ny = info.y[i];
-				actor.vx = actor.nvx;
-				actor.vy = actor.nvy;
+				actor.pvx = actor.nvx;
+				actor.pvy = actor.nvy;
 				actor.nvx = info.vx[i];
 				actor.nvy = info.vy[i];
-
-				//Skip to avoid interpolation during teleportation
-				if (dist(actor.x, actor.y, actor.nx, actor.ny) > 100) {
-					actor.x = actor.nx;
-					actor.y = actor.ny;
-				}
 			}
 			ActorMaxInterp = ActorCountInterp;
 			ActorCountInterp = 0;
@@ -697,10 +694,14 @@ function Actor(type, x, y, w, h, name, sid, gid) {
 	this.vy = 0;
 	this.dx = 0;
 	this.dy = 0;
-	this.nx = 0;
-	this.ny = 0;
+	this.pvx = 0;
+	this.pvy = 0;
 	this.nvx = 0;
 	this.nvy = 0;
+	this.px = 0;
+	this.py = 0;
+	this.nx = 0;
+	this.ny = 0;
 	this.npos = [0, 0]
 	this.interp = 0;
 	this.sid = sid || "";
@@ -771,17 +772,13 @@ function Actor(type, x, y, w, h, name, sid, gid) {
 				}
 				break;
 			case "friend":
-				this.interp += (1 / ActorMaxInterp) * 0.8;
-				cubicHermite(
-					[this.x, this.y], [this.vx, this.vy], [this.nx, this.ny], [this.nvx, this.nvy],
-					Math.min(this.interp, 1), this.npos
-				)
-				this.dx = this.nvx;
-				this.dy = this.nvy;
-				this.dx = Math.abs(this.dx) > 10 ? 0 : this.dx;
-				this.dy = Math.abs(this.dy) > 10 ? 0 : this.dy;
-				this.x = this.npos[0];
-				this.y = this.npos[1];
+				this.interp += (20.0 / 60.0);
+				this.vx = lerp(this.pvx, this.nvx, this.interp);
+				this.vy = lerp(this.pvy, this.nvy, this.interp);
+				this.x = lerp(this.px, this.nx, this.interp);
+				this.y = lerp(this.py, this.ny, this.interp);
+				this.dx = this.vx;
+				this.dy = this.vy;
 				this.move(0, 0);
 				break;
 		}
