@@ -362,8 +362,7 @@ def gameloop():
                         game.addplayer(player)
                         break
                 else:
-                    game = Game(game_number, TICK_SEC, GAME_TICKS)
-                    game_number += 1
+                    game = Game(len(games), TICK_SEC, GAME_TICKS)
                     game.addplayer(player)
 
                 break

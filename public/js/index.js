@@ -772,7 +772,7 @@ function Actor(type, x, y, w, h, name, sid, gid) {
 				}
 				break;
 			case "friend":
-				this.interp = ((Date.now() / 1000) - this.lastupdate) / this.itime;
+				this.interp = Math.min(((Date.now() / 1000) - this.lastupdate) / this.itime, 1);
 				this.vx = lerp(this.pvx, this.nvx, this.interp);
 				this.vy = lerp(this.pvy, this.nvy, this.interp);
 				this.x = lerp(this.px, this.nx, this.interp);
