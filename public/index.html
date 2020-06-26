@@ -34,7 +34,11 @@
 		</table>
 		<div class="nextbutton" onclick="game.setstatus('newgame');"></div>
 	</div>
-	<img src="img/loading.svg" class="loading">
+
+	<div class="loading">
+		<img src="img/loading.svg">
+		<p id="linfo">Waiting for players...</p>
+	</div>
 	<img src="img/ex.svg" class="loading disconnected" style="display: none;">
 	<p style="color:#7A9E9F" id="i"></p>
 	
@@ -47,7 +51,7 @@
 		<audio id="win" src="audio/win.mp3" type="audio/mp3" preload="auto"></audio>
 		<audio id="bigwin" src="audio/bigwin.mp3" type="audio/mp3" preload="auto"></audio>
 		<audio id="lose" src="audio/lose.mp3" type="audio/mp3" preload="auto"></audio>
-		<audio id="music" src="audio/music.mp3" type="audio/mp3" preload="auto" autoplay="true" loop="true"></audio>
+		<audio id="music" src="audio/music.mp3" type="audio/mp3" preload="auto" loop="true"></audio>
 
 		<!-- Scripts -->
 		<script src="js/polyfill.min.js"></script>

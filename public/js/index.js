@@ -191,6 +191,7 @@ const infoelem = $("#i");
 const leaderboard = $(".leaderboard");
 const leaderbplace = $(".leaderboard p#placement");
 const lbtable = $(".leaderboard tbody");
+const $info = $("#linfo");
 const BOTTOM = 1;
 const TOP = 2;
 const LEFT = 4;
@@ -206,7 +207,8 @@ const msg = {
 	init: 6,
 	endgame: 7,
 	win: 8,
-	dead: 9
+	dead: 9,
+	info: 10
 };
 
 function dropdown(message) {
@@ -270,6 +272,10 @@ sock.on("msg", function (message) {
 			cam.target = player;
 			game.setstatus("login");
 			break;
+		case msg.info:
+			console.log(info);
+			$info.text(info);
+			break;
 		case msg.game:
 			console.log("game %d started", info.number);
 			game.setstatus("game");
@@ -286,12 +292,12 @@ sock.on("msg", function (message) {
 				if (info.gid[i] == player.gid) continue;
 				actor = stage.actors[stage.findByIndex(info.gid[i])];
 				if (!actor || actor.halt) continue;
-				console.log(actor.interp);
-				actor.interp = 0;
 				actor.px = actor.nx;
 				actor.py = actor.ny;
 				actor.nx = info.x[i];
 				actor.ny = info.y[i];
+				actor.itime = (Date.now() / 1000) - actor.lastupdate
+				actor.lastupdate = Date.now() / 1000
 				actor.pvx = actor.nvx;
 				actor.pvy = actor.nvy;
 				actor.nvx = info.vx[i];
@@ -595,19 +601,10 @@ const cam = {
 	target: null,
 	speed: 0.1,
 	update: function () {
-		if (this.target) this.follow();
-		/* gbody.css(
-			"transform",
-			sp(
-				"%s scale(%.2f, %.2f) translate(%dpx, %dpx)",
-				this.zoomlvl,
-				this.zoomlvl,
-				-this.x, -this.y
-			)
-		); */
 		if (!this.target) {
 			window.scrollTo(0, 0);
 		} else {
+			this.follow();
 			if (!this.rot)
 				window.scrollTo(this.offsetx + this.x, this.offsety + this.y);
 			else
@@ -704,6 +701,8 @@ function Actor(type, x, y, w, h, name, sid, gid) {
 	this.ny = 0;
 	this.npos = [0, 0]
 	this.interp = 0;
+	this.itime = 1;
+	this.lastupdate = Date.now() / 1000;
 	this.sid = sid || "";
 	this.gid = gid || 0;
 	this.face = ":)";
@@ -730,6 +729,7 @@ function Actor(type, x, y, w, h, name, sid, gid) {
 		this.face = eyes[Math.floor(Math.random() * eyes.length)] +
 			mouths[Math.floor(Math.random() * mouths.length)];
 		dom.text(this.face);
+		dom.append($("<p>", {text: this.name}));
 	}
 	this.move = function (dx, dy) {
 		this.x += dx;
@@ -772,7 +772,7 @@ function Actor(type, x, y, w, h, name, sid, gid) {
 				}
 				break;
 			case "friend":
-				this.interp += (20.0 / 60.0);
+				this.interp = ((Date.now() / 1000) - this.lastupdate) / this.itime;
 				this.vx = lerp(this.pvx, this.nvx, this.interp);
 				this.vy = lerp(this.pvy, this.nvy, this.interp);
 				this.x = lerp(this.px, this.nx, this.interp);
@@ -796,6 +796,7 @@ function Actor(type, x, y, w, h, name, sid, gid) {
 				x: this.x,
 				y: this.y
 			});
+			cam.speed = 0;
 			this.suspend(false, 750, true);
 		} else {
 			this.suspend(false, 1000, true);
@@ -820,7 +821,6 @@ function Actor(type, x, y, w, h, name, sid, gid) {
 		dom.show();
 	};
 	this.suspend = function (hide, time, reset) {
-		cam.speed = 0;
 		this.halt = true;
 		if (hide) this.hide();
 		var that = this;
@@ -893,4 +893,5 @@ function gameloop() {
 
 game.setstatus("loading");
 cam.zoom();
+audio.music.play();
 window.requestAnimationFrame(gameloop);

@@ -215,7 +215,7 @@ div.goal {
 	background: #B8D8D8;
 	border-radius: 5px;
 	text-align: center;
-	overflow: hidden;
+	/* overflow: hidden; */
 	vertical-align: middle;
 	line-height: calc(50% + 37px);
 	font-size: 40px;
@@ -225,6 +225,15 @@ div.goal {
 	top: 0;
 	left: 0;
 	cursor: default;
+}
+.friend p {
+	color: #EEF5DB;
+	font-size: 18px;
+	position: fixed;
+	transform: rotate(-90deg);
+	top: -30px;
+	left: -30px;
+	text-align: center;
 }
 .player {
 	background: #EEF5DB;
@@ -237,12 +246,23 @@ div.goal {
 .loading,
 .disconnected {
 	position: fixed;
-	top: calc(50vmin - 10vmax);
-	left: 40vmax;
-	width: 20vmax;
-	height: 20vmax;
-	animation: linear spin infinite 2s, fadein 0.5s;
+	top: calc(50vmin - 15vmax);
+	left: 35vmax;
+	width: 30vmax;
+	height: 30vmax;
 	z-index: 2;
+}
+
+.loading img {
+	animation: linear spin infinite 2s, fadein 0.5s;
+	width: 50%;
+	margin-left: 25%;
+}
+
+.loading p {
+	color: #7A9E9F;
+	font-size: calc(2vmax + 2vmin);
+	text-align: center;
 }
 
 .disconnected {
@@ -484,17 +504,19 @@ p#placement.winner {
 /* Message */
 #msg {
 	position: fixed;
-	width: 100vmax;
-	height: 20vmin;
+	width: 75vmax;
+	left: 12.5vmax;
+	height: 175px;
 	background: #fe5f55;
 	text-align: center;
-	line-height: 30vmin;
+	line-height: 275px;
 	color: #EEF5DB;
 	border-radius: 16px;
 	border-top-left-radius: 0;
 	border-top-right-radius: 0;
 	transform: translatey(-400px);
 	font-size: 2vmax;
+	z-index: 4;
 }
 #msg.dropdown {
 	animation: dropdown cubic-bezier(.74, .19, .29, 1.3) 4s forwards;

@@ -68,7 +68,7 @@ VSPEED = 18
 GRAVITY = 0.8
 DRAG = 0.35
 HVEL = HSPEED * (pow(DRAG, 4) + pow(DRAG, 3) + pow(DRAG, 2) + DRAG + 1)
-msg = enum("msg", "join leave game update login init endgame win dead")
+msg = enum("msg", "join leave game update login init endgame win dead info")
 
 # Main Game class
 class Game(object):
@@ -116,6 +116,7 @@ class Game(object):
         })
 
         self.players.append(player)
+        send(player.room, msg.info, f"waiting:{len(self.players)} online:{len(players)}")
         print(self.title, player.name, "joined")
 
     def removeplayer(self, player, goodbye=True):
@@ -204,7 +205,8 @@ class Game(object):
 
         # Check if there are no players left
         if len(self.players) <= 1:
-            print("empty game! %d players left" % len(self.players))
+            print(self.title, "empty game! %d players left" % len(self.players))
+            send(self.room, msg.login, "your last opponent left the game!")
             self.finish()
 
         # Send position / velocity updates to players
@@ -277,7 +279,8 @@ def recieve(message):
         # If no issue, add to waitqueue
         if nickname:
             player.name = nickname
-            print(nickname, "logged in")
+            print("[SERVER]", nickname, "logged in")
+            send(player.room, msg.info, f"waiting: {len(waitqueue)}\nplaying: {len(players) - len(waitqueue)}")
             waitqueue.append(player)
     elif data[0] == msg.win:
         assert game
@@ -299,7 +302,7 @@ def recieve(message):
 def connect():
     "New connected client"
     sid = flask.request.sid
-    print("[SERVER]", "connection:", flask.request.referrer)
+    print("[SERVER]", "connection:", flask.request.referrer, "sid:", flask.request.sid)
     players[sid] = player = Player(sid, 2, 8, "lobby")
     send(player.sid, msg.init, {
         "sid": sid,
