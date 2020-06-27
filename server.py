@@ -60,8 +60,9 @@ sock = io.SocketIO(app)
 # Globals
 TICK_SEC = 20
 TICK = 1.0 / TICK_SEC
-GAME_TICKS = TICK_SEC * 60
-TTL = TICK_SEC * 4
+GAME_TICKS = TICK_SEC * 30
+TTL = TICK_SEC * 7
+MAX_PLAYERS = 8
 if len(sys.argv) > 1: TTL = int(sys.argv[1]) * TICK_SEC
 HSPEED = 6.5
 VSPEED = 18
@@ -100,6 +101,9 @@ class Game(object):
         assert player.game == None, player.name
         assert player.room == "lobby"
 
+        # Set ttl back to max to wait for more players
+        self.ttl = TTL
+
         # Add player to room
         player.game = self
         player.gindex = len(self.players)
@@ -116,7 +120,7 @@ class Game(object):
         })
 
         self.players.append(player)
-        send(player.room, msg.info, f"waiting:{len(self.players)} online:{len(players)}")
+        send(player.room, msg.info, f"in lobby {self.num};waiting for more players;{len(self.players)} joined;{len(players)} connected")
         print(self.title, player.name, "joined")
 
     def removeplayer(self, player, goodbye=True):
@@ -199,6 +203,8 @@ class Game(object):
         if self.started == False:
             if len(self.players) > 1:
                 self.ttl -= 1
+                if self.ttl % TICK_SEC == 0:
+                    send(self.room, msg.info, f"starting in {self.ttl // TICK_SEC}s")
                 if self.ttl <= 0:
                     self.start()
             return
@@ -335,7 +341,6 @@ def disconnect():
 def gameloop():
     "The main game loop"
     dtick = 0
-    game_number = 0
 
     print("[SERVER]", "started gameloop")
     while True:
@@ -343,10 +348,12 @@ def gameloop():
         dtick = time.time()
 
         # Update games
-        for game in games:
+        for game in games[:]:
             if game.finished is True:
+                print("[SERVER]", "removing game", game.num)
                 games.remove(game)
                 del game
+                print("[SERVER]", len(games), "games remain")
             else:
                 game.update()
 
@@ -354,11 +361,10 @@ def gameloop():
         for player in waitqueue:
             if len(games) <= maxgames:
                 waitqueue.remove(player)
-                added = False
 
                 # Attempt to add to existing game
                 for game in games:
-                    if not game.started:
+                    if not game.started and len(game.players) < MAX_PLAYERS:
                         game.addplayer(player)
                         break
                 else:
