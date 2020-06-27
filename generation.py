@@ -34,7 +34,7 @@ class Level(object):
         maxy = 10
         w = 40
         h = 4
-        difficulty = 5
+        difficulty = 3.5
         n = None
         newtype = ""
 
