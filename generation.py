@@ -20,21 +20,21 @@ class Level(object):
 
         self.props = []
 
-        if type_ is "horizontal":
+        if type_ == "horizontal":
             self.generate_horizontal()
-        elif type_ is "vertical":
+        elif type_ == "vertical":
             self.generate_vertical()
-        elif type_ is "classic":
+        elif type_ == "classic":
             self.generate_classic()
 
     def generate_classic(self):
-        self.budget = 20
+        difficulty = 3.5
+        self.budget = 20 * (difficulty / 5)
         x = -7
         y = 10
         maxy = 10
         w = 40
         h = 4
-        difficulty = 3.5
         n = None
         newtype = ""
 

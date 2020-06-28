@@ -1,0 +1,209 @@
+-> ppl are getting placed into levels when another game starts while their game is running
+-> levels are combining from the above effect as well
+-> assign higher cost to difficult hazards
+-> dont generate little-spike-on-wall platforms
+
+Exception in thread Thread-7873:
+Traceback (most recent call last):
+  File "/usr/lib/python3.8/threading.py", line 932, in _bootstrap_inner
+    self.run()
+  File "/usr/lib/python3.8/threading.py", line 870, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/ben/.local/lib/python3.8/site-packages/socketio/server.py", line 682, in _handle_event_internal
+    r = server._trigger_event(data[0], namespace, sid, *data[1:])
+  File "/home/ben/.local/lib/python3.8/site-packages/socketio/server.py", line 711, in _trigger_event
+    return self.handlers[namespace][event](*args)
+  File "/home/ben/.local/lib/python3.8/site-packages/flask_socketio/__init__.py", line 282, in _handler
+    return self._handle_event(handler, message, namespace, sid,
+  File "/home/ben/.local/lib/python3.8/site-packages/flask_socketio/__init__.py", line 713, in _handle_event
+    ret = handler(*args)
+  File "server.py", line 303, in recieve
+    assert game != None
+AssertionError
+
+
+[GAME 1] created
+Exception in thread Thread-1:
+Traceback (most recent call last):
+  File "/usr/lib/python3.8/threading.py", line 932, in _bootstrap_inner
+    self.run()
+  File "/usr/lib/python3.8/threading.py", line 870, in run
+    self._target(*self._args, **self._kwargs)
+  File "server.py", line 372, in gameloop
+    game.addplayer(player)
+  File "server.py", line 101, in addplayer
+    assert player.game == None, player.name
+AssertionError: eidrian
+[SERVER] anon1111 disconnected
+^C[SERVER] player disconnected
+
+SERVER] 2 games remain
+Exception in thread Thread-6392:
+Traceback (most recent call last):
+  File "/usr/lib/python3.8/threading.py", line 932, in _bootstrap_inner
+    self.run()
+  File "/usr/lib/python3.8/threading.py", line 870, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/ben/.local/lib/python3.8/site-packages/socketio/server.py", line 682, in _handle_event_internal
+    r = server._trigger_event(data[0], namespace, sid, *data[1:])
+  File "/home/ben/.local/lib/python3.8/site-packages/socketio/server.py", line 711, in _trigger_event
+    return self.handlers[namespace][event](*args)
+  File "/home/ben/.local/lib/python3.8/site-packages/flask_socketio/__init__.py", line 282, in _handler
+    return self._handle_event(handler, message, namespace, sid,
+  File "/home/ben/.local/lib/python3.8/site-packages/flask_socketio/__init__.py", line 713, in _handle_event
+    ret = handler(*args)
+  File "server.py", line 303, in recieve
+    assert game != None
+AssertionError
+Exception in thread Thread-1:
+Traceback (most recent call last):
+  File "/usr/lib/python3.8/threading.py", line 932, in _bootstrap_inner
+    self.run()
+  File "/usr/lib/python3.8/threading.py", line 870, in run
+    self._target(*self._args, **self._kwargs)
+  File "server.py", line 368, in gameloop
+    game.addplayer(player)
+  File "server.py", line 101, in addplayer
+    assert player.game == None, player.name
+AssertionError: 4chang
+^C[SERVER] bepis disconnected
+[GAME 1] bepis exited
+[SERVER] chris disconnected
+
+
+
+Exception in thread Thread-2356:
+Traceback (most recent call last):
+  File "/usr/lib/python3.8/threading.py", line 932, in _bootstrap_inner
+    self.run()
+  File "/usr/lib/python3.8/threading.py", line 870, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/ben/.local/lib/python3.8/site-packages/socketio/server.py", line 682, in _handle_event_internal
+    r = server._trigger_event(data[0], namespace, sid, *data[1:])
+  File "/home/ben/.local/lib/python3.8/site-packages/socketio/server.py", line 711, in _trigger_event
+    return self.handlers[namespace][event](*args)
+  File "/home/ben/.local/lib/python3.8/site-packages/flask_socketio/__init__.py", line 282, in _handler
+    return self._handle_event(handler, message, namespace, sid,
+  File "/home/ben/.local/lib/python3.8/site-packages/flask_socketio/__init__.py", line 713, in _handle_event
+    ret = handler(*args)
+  File "server.py", line 303, in recieve
+    assert game != None
+AssertionError
+
+
+
+Exception in thread Thread-1:
+Traceback (most recent call last):
+  File "/usr/lib/python3.8/threading.py", line 932, in _bootstrap_inner
+    self.run()
+  File "/usr/lib/python3.8/threading.py", line 870, in run
+    self._target(*self._args, **self._kwargs)
+  File "server.py", line 372, in gameloop
+    game.addplayer(player)
+  File "server.py", line 101, in addplayer
+    assert player.game == None, player.name
+AssertionError: Coffee
+
+[GAME 1] gtard joined
+Exception in thread Thread-8197:
+Traceback (most recent call last):
+  File "/usr/lib/python3.8/threading.py", line 932, in _bootstrap_inner
+    self.run()
+  File "/usr/lib/python3.8/threading.py", line 870, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/ben/.local/lib/python3.8/site-packages/socketio/server.py", line 682, in _handle_event_internal
+    r = server._trigger_event(data[0], namespace, sid, *data[1:])
+  File "/home/ben/.local/lib/python3.8/site-packages/socketio/server.py", line 711, in _trigger_event
+    return self.handlers[namespace][event](*args)
+  File "/home/ben/.local/lib/python3.8/site-packages/flask_socketio/__init__.py", line 282, in _handler
+    return self._handle_event(handler, message, namespace, sid,
+  File "/home/ben/.local/lib/python3.8/site-packages/flask_socketio/__init__.py", line 713, in _handle_event
+    ret = handler(*args)
+  File "server.py", line 271, in recieve
+    assert game == None
+AssertionError
+Exception in thread Thread-8319:
+Traceback (most recent call last):
+  File "/usr/lib/python3.8/threading.py", line 932, in _bootstrap_inner
+    self.run()
+  File "/usr/lib/python3.8/threading.py", line 870, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/ben/.local/lib/python3.8/site-packages/socketio/server.py", line 682, in _handle_event_internal
+    r = server._trigger_event(data[0], namespace, sid, *data[1:])
+  File "/home/ben/.local/lib/python3.8/site-packages/socketio/server.py", line 711, in _trigger_event
+    return self.handlers[namespace][event](*args)
+  File "/home/ben/.local/lib/python3.8/site-packages/flask_socketio/__init__.py", line 282, in _handler
+    return self._handle_event(handler, message, namespace, sid,
+  File "/home/ben/.local/lib/python3.8/site-packages/flask_socketio/__init__.py", line 713, in _handle_event
+    ret = handler(*args)
+  File "server.py", line 271, in recieve
+    assert game == None
+AssertionError
+[SERVER] terry logged in
+
+
+    self._target(*self._args, **self._kwargs)
+  File "/home/ben/.local/lib/python3.8/site-packages/socketio/server.py", line 682, in _handle_event_internal
+    r = server._trigger_event(data[0], namespace, sid, *data[1:])
+  File "/home/ben/.local/lib/python3.8/site-packages/socketio/server.py", line 711, in _trigger_event
+    return self.handlers[namespace][event](*args)
+  File "/home/ben/.local/lib/python3.8/site-packages/flask_socketio/__init__.py", line 282, in _handler
+    return self._handle_event(handler, message, namespace, sid,
+  File "/home/ben/.local/lib/python3.8/site-packages/flask_socketio/__init__.py", line 713, in _handle_event
+    ret = handler(*args)
+  File "server.py", line 270, in recieve
+    assert player not in waitqueue
+AssertionError
+Exception in thread Thread-14271:
+Traceback (most recent call last):
+  File "/usr/lib/python3.8/threading.py", line 932, in _bootstrap_inner
+    self.run()
+  File "/usr/lib/python3.8/threading.py", line 870, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/ben/.local/lib/python3.8/site-packages/socketio/server.py", line 682, in _handle_event_internal
+    r = server._trigger_event(data[0], namespace, sid, *data[1:])
+  File "/home/ben/.local/lib/python3.8/site-packages/socketio/server.py", line 711, in _trigger_event
+    return self.handlers[namespace][event](*args)
+  File "/home/ben/.local/lib/python3.8/site-packages/flask_socketio/__init__.py", line 282, in _handler
+    return self._handle_event(handler, message, namespace, sid,
+  File "/home/ben/.local/lib/python3.8/site-packages/flask_socketio/__init__.py", line 713, in _handle_event
+    ret = handler(*args)
+  File "server.py", line 270, in recieve
+    assert player not in waitqueue
+AssertionError
+Exception in thread Thread-14272:
+Traceback (most recent call last):
+  File "/usr/lib/python3.8/threading.py", line 932, in _bootstrap_inner
+    self.run()
+  File "/usr/lib/python3.8/threading.py", line 870, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/ben/.local/lib/python3.8/site-packages/socketio/server.py", line 682, in _handle_event_internal
+    r = server._trigger_event(data[0], namespace, sid, *data[1:])
+  File "/home/ben/.local/lib/python3.8/site-packages/socketio/server.py", line 711, in _trigger_event
+    return self.handlers[namespace][event](*args)
+  File "/home/ben/.local/lib/python3.8/site-packages/flask_socketio/__init__.py", line 282, in _handler
+    return self._handle_event(handler, message, namespace, sid,
+  File "/home/ben/.local/lib/python3.8/site-packages/flask_socketio/__init__.py", line 713, in _handle_event
+    ret = handler(*args)
+  File "server.py", line 270, in recieve
+    assert player not in waitqueue
+AssertionError
+Exception in thread Thread-14273:
+Traceback (most recent call last):
+  File "/usr/lib/python3.8/threading.py", line 932, in _bootstrap_inner
+    self.run()
+  File "/usr/lib/python3.8/threading.py", line 870, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/ben/.local/lib/python3.8/site-packages/socketio/server.py", line 682, in _handle_event_internal
+    r = server._trigger_event(data[0], namespace, sid, *data[1:])
+  File "/home/ben/.local/lib/python3.8/site-packages/socketio/server.py", line 711, in _trigger_event
+    return self.handlers[namespace][event](*args)
+  File "/home/ben/.local/lib/python3.8/site-packages/flask_socketio/__init__.py", line 282, in _handler
+    return self._handle_event(handler, message, namespace, s
+
+
+
+
+
+LEVELS ARE X
+

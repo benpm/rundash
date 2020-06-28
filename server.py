@@ -14,7 +14,7 @@ import random
 from game_classes import Player, Actor, Win
 
 # Usage
-print("Usage: %s [TTL (seconds)]" % sys.argv[0])
+print("Usage: %s [port]" % sys.argv[0])
 
 # Helper functions
 def pack(obj):
@@ -47,6 +47,12 @@ def close_room(room, namespace = "/"):
     with app.app_context():
         io.close_room(room, namespace)
 
+def get_next_game_time():
+    t = GAME_TICKS
+    for game in games:
+        t = min(game.timer, t)
+    return t
+
 # Setup server app
 app = flask.Flask(__name__, static_url_path="/public")
 
@@ -58,12 +64,12 @@ maxgames = 10
 sock = io.SocketIO(app)
 
 # Globals
+PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
 TICK_SEC = 20
 TICK = 1.0 / TICK_SEC
 GAME_TICKS = TICK_SEC * 30
 TTL = TICK_SEC * 7
 MAX_PLAYERS = 8
-if len(sys.argv) > 1: TTL = int(sys.argv[1]) * TICK_SEC
 HSPEED = 6.5
 VSPEED = 18
 GRAVITY = 0.8
@@ -120,7 +126,6 @@ class Game(object):
         })
 
         self.players.append(player)
-        send(player.room, msg.info, f"in lobby {self.num};waiting for more players;{len(self.players)} joined;{len(players)} connected")
         print(self.title, player.name, "joined")
 
     def removeplayer(self, player, goodbye=True):
@@ -204,9 +209,16 @@ class Game(object):
             if len(self.players) > 1:
                 self.ttl -= 1
                 if self.ttl % TICK_SEC == 0:
-                    send(self.room, msg.info, f"starting in {self.ttl // TICK_SEC}s")
+                    send(self.room, msg.info, f"lobby {self.num};starting in {self.ttl // TICK_SEC}s;{len(self.players)} joined;{len(players)} connected")
                 if self.ttl <= 0:
                     self.start()
+            else:
+                t = get_next_game_time()
+                if t != GAME_TICKS:
+                    m = f"next game in {get_next_game_time() // TICK_SEC}s"
+                else:
+                    m = f"waiting for players"
+                send(self.room, msg.info, f"lobby {self.num};{m};{len(self.players)} joined;{len(players)} connected")
             return
 
         # Check if there are no players left
@@ -358,20 +370,20 @@ def gameloop():
                 game.update()
 
         # Update game queue
-        for player in waitqueue:
+        for player in waitqueue[:]:
             if len(games) <= maxgames:
                 waitqueue.remove(player)
 
                 # Attempt to add to existing game
+                n = 0
                 for game in games:
+                    n = max(n, game.num)
                     if not game.started and len(game.players) < MAX_PLAYERS:
                         game.addplayer(player)
                         break
                 else:
-                    game = Game(len(games), TICK_SEC, GAME_TICKS)
+                    game = Game(n + 1, TICK_SEC, GAME_TICKS)
                     game.addplayer(player)
-
-                break
 
         # Wait delta time
         dtick = time.time() - dtick
@@ -379,6 +391,6 @@ def gameloop():
 
 # Begin
 if __name__ == "__main__":
-    print("[SERVER]", "starting...")
+    print("[SERVER]", f"starting on port {PORT}...")
     gamethread = sock.start_background_task(gameloop)
-    sock.run(app, host="0.0.0.0", port=8000)
+    sock.run(app, host="0.0.0.0", port=PORT)

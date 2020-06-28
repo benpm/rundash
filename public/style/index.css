@@ -471,23 +471,24 @@ p#placement.winner {
 /* Special Buttons */
 .nextbutton {
 	position: fixed;
-	width: calc(4vmax + 4vmin);
-	height: calc(4vmax + 4vmin);
-	background-color: #293436;
+	width: calc(8vmax + 8vmin);
+	height: calc(3vmax + 3vmin);
+	background-color: #D2D8C0;
 	transition: background-color 0.2s;
-	border-radius: 0;
-	border-bottom-right-radius: 16px;
+	border-radius: 4px;
 	background-image: url("../img/arrow.svg");
-	background-size: cover;
+	background-size: contain;
 	padding: 4px;
 	background-origin: content-box;
 	background-repeat: no-repeat;
 	cursor: pointer;
-	top: 0;
-	left: 0;
+	right: 20px;
+	bottom: 20px;
+	box-shadow: 0px 8px 0px #293436;
+	background-position: center;
 }
 .nextbutton:hover {
-	background-color: #334143;
+	background-color: #EEF5DB;
 }
 .landscape .nextbutton {
 	width: calc(7vmax + 7vmin);

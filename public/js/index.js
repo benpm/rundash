@@ -273,8 +273,8 @@ sock.on("msg", function (message) {
 			game.setstatus("login");
 			break;
 		case msg.info:
-			console.log(info);
-			$info.text(info);
+			let infotext = info.split(";").join("<br>");
+			$info.html(infotext);
 			break;
 		case msg.game:
 			console.log("game %d started", info.number);
