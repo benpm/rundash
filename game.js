@@ -178,6 +178,7 @@ $(document).on("touchmove", function () {
 		touch.lefthold = true;
 });
 
+var gamejolt = false;
 var AUTO_LANDSCAPE = false;
 var address = location.href;
 var sock = io.connect(address);
@@ -927,6 +928,14 @@ game.setstatus("loading");
 cam.zoom();
 audio.music.play();
 window.requestAnimationFrame(gameloop);
+
+//GameJolt usage
+gamejolt = GJAPI.bActive;
+if (gamejolt) {
+	$("#login form input").val(GJAPI.sUserName);
+	$("#login form input").attr("readonly", "readonly");
+	$("#login form input").css("background-color", "#3C4C4F");
+}
 
 window["_g_login"] = function (name) {
 	send(msg.login, name);

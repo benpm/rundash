@@ -11,6 +11,7 @@ import gzip
 import json
 import generation
 import importlib
+from py_gjapi import GameJoltTrophy
 from game_classes import Player, Actor, Win
 
 # Usage
@@ -62,6 +63,19 @@ games = []
 waitqueue = []
 maxgames = 10
 sock = io.SocketIO(app)
+
+# Setup GameJolt stuff
+gj = None
+if os.path.exists("gamejolt.json"):
+    with open("gamejolt.json", "r+") as file:
+        gj_info = json.load(file)
+        if "game_id" in gj_info and "private_key" in gj_info:
+            gj = GameJoltTrophy("", "", gj_info["game_id"], gj_info["private_key"])
+            print("[GAMEJOLT]", "Ready for API usage!")
+        else:
+            print("[GAMEJOLT]", "Missing game_id / private_key from gamejolt.json file!")
+else:
+    print("[GAMEJOLT]", "Missing gamejolt.json file!")
 
 # Globals
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
@@ -179,14 +193,16 @@ class Game(object):
                     "time": player.win.time
                 })
 
-        # Sort wins
-        for i in range(1, len(wins)):
-            j = i
-            while j > 0 and wins[j - 1]["time"] > wins[j]["time"]:
-                temp = wins[j]
-                wins[j] = wins[j - 1]
-                wins[j - 1] = temp
-                j -= 1
+        # Sort wins and players
+        wins = sorted(wins, key=lambda win: win["time"])
+
+        # GameJolt wins
+        for win in wins[:3]:
+            player = players[win["sid"]]
+            player.wins += 1
+            if gj:
+                gj.addScores(str(player.wins), player.wins, 519293, guest=True, guestname=player.name)
+                print("[GAMEJOLT]", player.name, player.wins)
 
         # Add DNFs
         for player in self.players:
@@ -403,10 +419,10 @@ if __name__ == "__main__":
 
     if not debugMode:
         print("[SERVER]", "RELEASE MODE uglifying js...")
-        os.system("uglifyjs -c -m -e -o ./public/js/index.min.js -- ./public/js/index.js")
+        os.system("uglifyjs -c -m -e -o ./public/js/index.min.js -- ./game.js")
     else:
         print("[SERVER]", "DEBUG MODE copying js...")
-        os.system("cp ./public/js/index.js ./public/js/index.min.js")
+        os.system("cp ./game.js ./public/js/index.min.js")
     
     print("[SERVER]", f"starting on port {PORT}...")
     gamethread = sock.start_background_task(gameloop)

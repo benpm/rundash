@@ -13,8 +13,9 @@
 
 	<!-- Game UI -->
 	<div id="msg">Wrong!</div>
+	<p>GameJolt</p>
 	<p id="title">Rundash!</p>
-	<p id="login-msg">_ games<br>_ online</p>
+	<p id="login-msg"></p>
 	<div id="login" style="display: none;">
 		<form onsubmit="var val = $(this).find('input').val(); _g_login(val);" action="javascript:void(0);">
 			<input type="text" name="firstname" placeholder="nickname" autocomplete="off"><br>
@@ -38,7 +39,7 @@
 
 	<div class="loading">
 		<img src="img/loading.svg">
-		<p id="linfo">...</p>
+		<p id="linfo" style="display: none;">...</p>
 	</div>
 	<img src="img/ex.svg" class="loading disconnected" style="display: none;">
 	<p style="color:#7A9E9F" id="i"></p>
@@ -65,6 +66,7 @@
 		<script src="js/msgpack.min.js"></script>
 		<script src="js/pako.min.js"></script>
 		<script src="js/seedrandom.min.js"></script>
+		<script src="js/gj-js-api.min.js"></script>
 		<script src="js/index.min.js"></script>
 	</div>
 </body>

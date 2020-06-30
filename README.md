@@ -1,9 +1,16 @@
+![](media/banner.png)
+
 # Rundash
-A simple online racing-platformer made to run on most browsers / systems! [Here is a demo](https://codepen.io/_bm/full/QgVPqo/).
+A casual, online multiplayer racing platformer! The graphics are all HTML/CSS, no canvas needed! Networking is done with websockets. Server is written in Python 3, client in plain ol' JavaScript.
 
-## Design
-Here is the [design document](https://docs.google.com/document/d/1luPd_t-Zen7it4TMPxJb4RIFfKE-jRKTVQ8oJJ5pEbw/edit?usp=sharing) we are currently working with.
+## Running a Server
+To run a server, you need to run:
 
-## Implementation
-The game client is written in JavaScript using JQuery, Polyfill and Sprintf. It requires neither the canvas element nor WebGL to run. All graphics are driven by plain CSS, HTML and SVG graphics.
-The server is written in python using Flask-SocketIO.
+```pip3 i -r requirements.txt```
+
+then:
+
+```python3 server.py [PORT] [DEBUG?]```
+
+## Minification
+For security, the server will run uglify-js on the game javascript code to ensure that users cannot (easily) cheat.

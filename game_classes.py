@@ -54,6 +54,9 @@ class Player(Actor):
 
         # Game Race Timer
         self.timer = 0
+
+        # Consecutive wins
+        self.wins = 0
     
     def reset_game_state(self):
         self.gindex = -1
