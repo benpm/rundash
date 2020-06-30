@@ -336,7 +336,7 @@ class ITunnel(Ingredient):
 
     def __init__(self, x, y, difficulty, length):
         super().__init__("tunnel", x, y, difficulty)
-        self.cost = 4
+        self.cost = 5
 
         # Generate
         h = random.randint(30, 40)
@@ -361,7 +361,7 @@ class ILadder(Ingredient):
 
     def __init__(self, x, y, difficulty, steps):
         super().__init__("ladder", x, y, difficulty)
-        self.cost = 3
+        self.cost = steps
 
         # Generate ladder-steps
         for i in range(steps):

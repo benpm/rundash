@@ -2,7 +2,7 @@
 
 /* globals $, msgpack, sprintf, io, pako */
 
-const keyboard = {
+var keyboard = {
 	keymap: {
 		" ": 32,
 		space: 32,
@@ -130,7 +130,7 @@ $(document).keyup(function (event) {
 $(window).resize(function () {
 	if (game.status != "loading") cam.zoom();
 });
-const touch = {
+var touch = {
 	right: false,
 	righthold: false,
 	left: false,
@@ -139,7 +139,7 @@ const touch = {
 	time: 0,
 	timer: null
 };
-const input = {
+var input = {
 	jump: function () {
 		return keyboard.down("space", "w", "up") || touch.right || touch.left;
 	},
@@ -178,29 +178,29 @@ $(document).on("touchmove", function () {
 		touch.lefthold = true;
 });
 
-const AUTO_LANDSCAPE = false;
-const address = location.href;
-const sock = io.connect(address);
-const sp = sprintf;
-const body = $(document.body);
-const gbody = $("#game");
-const $msg = $("#msg");
-const login = $("#login");
-const loginface = $("#login .player");
-const infoelem = $("#i");
-const leaderboard = $(".leaderboard");
-const leaderbplace = $(".leaderboard p#placement");
-const lbtable = $(".leaderboard tbody");
-const $info = $("#linfo");
-const $slead = $("#sml-leaderboard");
-const $lobbyinfo = $("#login-msg");
-const BOTTOM = 1;
-const TOP = 2;
-const LEFT = 4;
-const RIGHT = 8;
-const eyes = [":", ";", "8", "B"];
-const mouths = ["}", "]", ")", "(", "[", "{", "|", "\\", ">", "&", "L", "I", "D", "3", "1", "P", "B", "S"];
-const msg = {
+var AUTO_LANDSCAPE = false;
+var address = location.href;
+var sock = io.connect(address);
+var sp = sprintf;
+var body = $(document.body);
+var gbody = $("#game");
+var $msg = $("#msg");
+var login = $("#login");
+var loginface = $("#login .player");
+var infoelem = $("#i");
+var leaderboard = $(".leaderboard");
+var leaderbplace = $(".leaderboard p#placement");
+var lbtable = $(".leaderboard tbody");
+var $info = $("#linfo");
+var $slead = $("#sml-leaderboard");
+var $lobbyinfo = $("#login-msg");
+var BOTTOM = 1;
+var TOP = 2;
+var LEFT = 4;
+var RIGHT = 8;
+var eyes = [":", ";", "8", "B"];
+var mouths = ["}", "]", ")", "(", "[", "{", "|", "\\", ">", "&", "L", "I", "D", "3", "1", "P", "B", "S"];
+var msg = {
 	join: 1,
 	leave: 2,
 	game: 3,
@@ -278,7 +278,7 @@ sock.on("msg", function (message) {
 			game.setstatus("login");
 			break;
 		case msg.info:
-			let infotext = info.split(";").join("<br>");
+			var infotext = info.split(";").join("<br>");
 			$info.html(infotext);
 			break;
 		case msg.game:
@@ -474,7 +474,7 @@ var stage = {
 		if (this.props.length > this.maxprops) {
 			this.props.find(function (prop, i) {
 				if (prop.type == "grave") {
-					prop.delete();
+					prop.devare();
 					this.props.splice(i, 1);
 					return true;
 				} else return false;
@@ -505,18 +505,18 @@ var stage = {
 		});
 	},
 	removeByIndex: function (gid) {
-		const index = this.findByIndex(gid);
+		var index = this.findByIndex(gid);
 		if (index != -1) {
-			this.actors[index].delete();
+			this.actors[index].devare();
 			this.actors.splice(index, 1);
 		}
 		else console.error("tried to remove actor #%d, but it doesn't exist", gid)
 	},
 	clear: function () {
 		for (var i = this.props.length - 1; i >= 0; i--)
-			this.props.pop().delete();
+			this.props.pop().devare();
 		for (var i = this.actors.length - 1; i >= 1; i--)
-			this.actors.pop().delete();
+			this.actors.pop().devare();
 	},
 	bound: function (minx, miny) {
 		gbody.css("left", -Math.min(0, minx) + "px");
@@ -527,7 +527,7 @@ var stage = {
 	timer: 0
 };
 
-const audio = (function () {
+var audio = (function () {
 	var self = {};
 	Array.from($("audio")).forEach(function (element) {
 		this[element.id] = element;
@@ -535,7 +535,7 @@ const audio = (function () {
 	return self;
 })();
 
-const game = (function () {
+var game = (function () {
 	var self = {
 		status: "loading",
 		setstatus: function (status) {
@@ -578,6 +578,7 @@ const game = (function () {
 					$(".disconnected").hide();
 					break;
 				case "login":
+					$("#title").show();
 					$("#login-msg").show();
 					login.show();
 					cam.target = null;
@@ -609,6 +610,7 @@ const game = (function () {
 					break;
 				case "disconnected":
 					$(".disconnected").show();
+					$("#title").hide();
 					stage.clear();
 					break;
 			}
@@ -617,7 +619,7 @@ const game = (function () {
 	return self;
 })();
 
-const cam = {
+var cam = {
 	x: 0,
 	y: 0,
 	offsetx: 0,
@@ -682,7 +684,7 @@ var player = new Actor("player", 0, 0, 65, 65);
 var ActorMaxInterp = 3
 var ActorCountInterp = 0
 
-//Constructor Objects
+//varructor Objects
 function Prop(type, x, y, w, h, text) {
 	//Properties
 	this.type = type;
@@ -703,7 +705,7 @@ function Prop(type, x, y, w, h, text) {
 	stage.addprop(this);
 
 	//Methods
-	this.delete = function () {
+	this.devare = function () {
 		dom.remove();
 	};
 }
@@ -841,7 +843,7 @@ function Actor(type, x, y, w, h, name, sid, gid) {
 		this.suspend(false, 750, true);
 		dom.addClass("padshrink");
 	};
-	this.delete = function () {
+	this.devare = function () {
 		dom.remove();
 	};
 	this.hide = function () {
@@ -879,10 +881,10 @@ function Effect(x, y, image) {
 	});
 	gbody.append(dom);
 
-	this.delete = function () {
+	this.devare = function () {
 		dom.remove();
 	};
-	setTimeout(this.delete, 2000);
+	setTimeout(this.devare, 2000);
 }
 
 function gameloop() {
@@ -925,3 +927,10 @@ game.setstatus("loading");
 cam.zoom();
 audio.music.play();
 window.requestAnimationFrame(gameloop);
+
+window["_g_login"] = function (name) {
+	send(msg.login, name);
+};
+window["_g_status"] = function (status) {
+	game.setstatus(status)
+};

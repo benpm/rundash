@@ -1,4 +1,5 @@
 import sys
+import os
 from math import *
 import string
 import time
@@ -10,7 +11,7 @@ import gzip
 import json
 import generation
 import importlib
-import random
+from jsmin import jsmin
 from game_classes import Player, Actor, Win
 
 # Usage
@@ -101,7 +102,7 @@ class Game(object):
 
         games.append(self)
         print(self.title, "created")
-        send("lobby", msg.lobbyinfo, f"{len(games)};{len(players)}")
+        send("lobby", msg.lobbyinfo, f"{len(games)} games;{len(players)} online")
 
     def addplayer(self, player):
         assert self.started == False
@@ -164,7 +165,7 @@ class Game(object):
 
         close_room(self.room)
         print(self.title, "stopped")
-        send("lobby", msg.lobbyinfo, f"{len(games)};{len(players)}")
+        send("lobby", msg.lobbyinfo, f"{len(games)} games;{len(players)} online")
 
     def finish(self):
         print(self.title, "finished")
@@ -211,7 +212,7 @@ class Game(object):
             if len(self.players) > 1:
                 self.ttl -= 1
                 if self.ttl % TICK_SEC == 0:
-                    send(self.room, msg.info, f"lobby {self.num};starting in {self.ttl // TICK_SEC}s;{len(self.players)} joined;{len(players)} connected")
+                    send(self.room, msg.info, f"lobby {self.num};starting in {self.ttl // TICK_SEC}s;{len(self.players)} joined;{len(players)} online")
                 if self.ttl <= 0:
                     self.start()
             else:
@@ -220,7 +221,7 @@ class Game(object):
                     m = f"next game in {get_next_game_time() // TICK_SEC}s"
                 else:
                     m = f"waiting for players"
-                send(self.room, msg.info, f"lobby {self.num};{m};{len(self.players)} joined;{len(players)} connected")
+                send(self.room, msg.info, f"lobby {self.num};{m};{len(self.players)} joined;{len(players)} online")
             return
 
         # Check if there are no players left
@@ -300,7 +301,6 @@ def recieve(message):
         if nickname:
             player.name = nickname
             print("[SERVER]", nickname, "logged in")
-            send(player.room, msg.info, f"waiting: {len(waitqueue)}\nplaying: {len(players) - len(waitqueue)}")
             waitqueue.append(player)
     elif data[0] == msg.win:
         assert game
@@ -356,7 +356,7 @@ def disconnect():
         leave_room(player, room)
 
     players.pop(player.sid)
-    send("lobby", msg.lobbyinfo, f"{len(games)};{len(players)}")
+    send("lobby", msg.lobbyinfo, f"{len(games)} games;{len(players)} online")
 
 # Main game loop
 def gameloop():
@@ -400,6 +400,16 @@ def gameloop():
 
 # Begin
 if __name__ == "__main__":
+    debugMode = len(sys.argv) > 2 and sys.argv[2] == "debug"
+
+    if not debugMode:
+        print("[SERVER]", "RELEASE MODE uglifying js...")
+        os.system("uglifyjs -c -m -e -o ./public/js/index.min.js -- ./public/js/index.js")
+    else:
+        print("[SERVER]", "DEBUG MODE copying js...")
+        os.system("cp ./public/js/index.js ./public/js/index.min.js")
+    
     print("[SERVER]", f"starting on port {PORT}...")
     gamethread = sock.start_background_task(gameloop)
     sock.run(app, host="0.0.0.0", port=PORT)
+ 
