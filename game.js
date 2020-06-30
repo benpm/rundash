@@ -1,6 +1,6 @@
 "use strict";
 
-var VERSION = "1.0.0";
+var VERSION = "1.0.1";
 
 /* globals $, msgpack, sprintf, io, pako */
 
@@ -180,9 +180,8 @@ $(document).on("touchmove", function () {
 		touch.lefthold = true;
 });
 
-var gamejolt = false;
 var AUTO_LANDSCAPE = false;
-var address = location.href;
+var address = GJAPI.bOnGJ ? "35.247.123.60:8888" : location.href;
 var sock = io.connect(address);
 var sp = sprintf;
 var body = $(document.body);
@@ -934,8 +933,8 @@ window.requestAnimationFrame(gameloop);
 $("#version").append(VERSION);
 
 //GameJolt usage
-gamejolt = GJAPI.bActive;
-if (gamejolt) {
+if (GJAPI.bOnGJ && GJAPI.bActive) {
+	console.log("GameJolt logged in!");
 	$("#login form input").val(GJAPI.sUserName);
 	$("#login form input").attr("readonly", "readonly");
 	$("#login form input").css("background-color", "#3C4C4F");
@@ -943,7 +942,7 @@ if (gamejolt) {
 }
 
 window["_g_login"] = function (name) {
-	send(msg.login, name);
+	send(msg.login, [name, GJAPI.sUserToken]);
 };
 window["_g_status"] = function (status) {
 	game.setstatus(status)

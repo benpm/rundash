@@ -201,8 +201,14 @@ class Game(object):
             player = players[win["sid"]]
             player.wins += 1
             if gj:
-                gj.addScores(str(player.wins), player.wins, 519293, guest=True, guestname=player.name)
-                print("[GAMEJOLT]", player.name, player.wins)
+                if player.token:
+                    gj.user_token = player.token
+                    gj.username = player.name
+                    gj.addScores(str(player.wins), player.wins, 519293)
+                    print("[GAMEJOLT]", "(logged in)", player.name, player.wins)
+                else:
+                    gj.addScores(str(player.wins), player.wins, 519293, guest=True, guestname=player.name)
+                    print("[GAMEJOLT]", "(guest)", player.name, player.wins)
 
         # Add DNFs
         for player in self.players:
@@ -296,10 +302,10 @@ def recieve(message):
     if data[0] == msg.update:
         player.update(info["x"], info["y"], info["vx"], info["vy"])
     elif data[0] == msg.login:
-        #TODO: login using GameJolt API
         assert player not in waitqueue
         assert game == None
-        nickname = info
+        nickname = info[0]
+        player.token = info[1]
 
         # Verify nickname
         if len(nickname) < 3 or len(nickname) > 8:
