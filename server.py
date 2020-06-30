@@ -11,7 +11,6 @@ import gzip
 import json
 import generation
 import importlib
-from jsmin import jsmin
 from game_classes import Player, Actor, Win
 
 # Usage
