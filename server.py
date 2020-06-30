@@ -75,7 +75,7 @@ VSPEED = 18
 GRAVITY = 0.8
 DRAG = 0.35
 HVEL = HSPEED * (pow(DRAG, 4) + pow(DRAG, 3) + pow(DRAG, 2) + DRAG + 1)
-msg = enum("msg", "join leave game update login init endgame win dead info")
+msg = enum("msg", "join leave game update login init endgame win dead info leaderboard lobbyinfo")
 
 # Main Game class
 class Game(object):
@@ -101,6 +101,7 @@ class Game(object):
 
         games.append(self)
         print(self.title, "created")
+        send("lobby", msg.lobbyinfo, f"{len(games)};{len(players)}")
 
     def addplayer(self, player):
         assert self.started == False
@@ -163,6 +164,7 @@ class Game(object):
 
         close_room(self.room)
         print(self.title, "stopped")
+        send("lobby", msg.lobbyinfo, f"{len(games)};{len(players)}")
 
     def finish(self):
         print(self.title, "finished")
@@ -307,6 +309,10 @@ def recieve(message):
         elif player.win.time > player.timer:
             player.win.time = player.timer
         send(player.sid, msg.win, {"time": player.timer})
+        # Send leaderboard to all players in current game
+        send(game.room, msg.leaderboard,
+            [f"{p.name} [{p.win.time // TICK_SEC}s]" for p in sorted([p for p in game.players if p.win != None], key=lambda p: p.win.time)]
+        )
         player.timer = 0
     elif data[0] == msg.game:
         assert player not in waitqueue
@@ -322,6 +328,7 @@ def connect():
     sid = flask.request.sid
     print("[SERVER]", "connection:", flask.request.referrer, "sid:", flask.request.sid)
     players[sid] = player = Player(sid, 2, 8, "lobby")
+    set_room(player, player.room)
     send(player.sid, msg.init, {
         "sid": sid,
         "hspeed": HSPEED,
@@ -329,6 +336,7 @@ def connect():
         "gravity": GRAVITY,
         "drag": DRAG
         })
+    send("lobby", msg.lobbyinfo, f"{len(games)} games;{len(players)} online")
 
 # Websocket disconnect
 @sock.on("disconnect")
@@ -348,6 +356,7 @@ def disconnect():
         leave_room(player, room)
 
     players.pop(player.sid)
+    send("lobby", msg.lobbyinfo, f"{len(games)};{len(players)}")
 
 # Main game loop
 def gameloop():

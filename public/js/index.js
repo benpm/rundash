@@ -192,6 +192,8 @@ const leaderboard = $(".leaderboard");
 const leaderbplace = $(".leaderboard p#placement");
 const lbtable = $(".leaderboard tbody");
 const $info = $("#linfo");
+const $slead = $("#sml-leaderboard");
+const $lobbyinfo = $("#login-msg");
 const BOTTOM = 1;
 const TOP = 2;
 const LEFT = 4;
@@ -208,8 +210,11 @@ const msg = {
 	endgame: 7,
 	win: 8,
 	dead: 9,
-	info: 10
+	info: 10,
+	leaderboard: 11,
+	lobbyinfo: 12
 };
+
 
 function dropdown(message) {
 	$msg.text(message);
@@ -287,7 +292,7 @@ sock.on("msg", function (message) {
 			}
 			break;
 		case msg.update:
-			//Update actors from server	
+			//Update actors from server
 			for (var i = 0; i < info.gid.length; i++) {
 				if (info.gid[i] == player.gid) continue;
 				actor = stage.actors[stage.findByIndex(info.gid[i])];
@@ -377,7 +382,14 @@ sock.on("msg", function (message) {
 			actor.y = info.y + actor.vy * 2;
 			actor.die();
 			console.log("Recieved dead on player ", info.gid);
-			break;	
+			break;
+		case msg.leaderboard:
+			$slead.html("<p>" + info.join("</p><p>") + "</p>");
+			break;
+		case msg.lobbyinfo:
+			console.log(info);
+			$lobbyinfo.html(info.split(";").join("<br>"));
+			break;
 	}
 });
 
@@ -528,44 +540,65 @@ const game = (function () {
 		status: "loading",
 		setstatus: function (status) {
 			console.info(sp("STATUS: %s -> %s", this.status, status));
+
+			// From status
+			switch (this.status) {
+				case "loading":
+					$(".loading").hide();
+					break;
+				case "login":
+					login.hide();
+					$("#login-msg").hide();
+					break;
+				case "lobby":
+					$("#title").hide();
+					$(".loading").hide();
+					break;
+				case "game":
+					infoelem.hide();
+					gbody.hide();
+					$slead.hide();
+					break;
+				case "endgame":
+					leaderboard.hide();
+					break;
+				case "newgame":
+					break;
+				case "disconnected":
+					$(".disconnected").hide();
+					break;
+			}
 			this.status = status;
+
+			// To status
 			switch (status) {
 				case "loading":
 					cam.update();
 					$(".loading").show();
 					$(".disconnected").hide();
-					leaderboard.hide();
-					gbody.hide()
 					break;
 				case "login":
-					$(".loading").hide();
-					$(".disconnected").hide();
+					$("#login-msg").show();
 					login.show();
 					cam.target = null;
 					cam.reset();
 					break;
 				case "lobby":
+					$("#title").show();
 					$(".loading").show();
 					$(".disconnected").hide();
-					login.hide();
-					infoelem.hide();
-					gbody.hide();
 					stage.clear();
-					leaderboard.hide();
 					break;
 				case "game":
-					$(".loading").hide();
-					$(".disconnected").hide();
 					infoelem.show();
 					gbody.show();
 					cam.target = player
 					cam.zoom();
 					cam.reset();
+					$slead.empty();
+					$slead.show();
 					break;
 				case "endgame":
-					$(".disconnected").hide();
-					infoelem.hide();
-					gbody.hide();
 					leaderboard.show();
 					cam.target = null;
 					cam.update();
@@ -575,12 +608,7 @@ const game = (function () {
 					this.setstatus("lobby");
 					break;
 				case "disconnected":
-					$(".loading").hide();
 					$(".disconnected").show();
-					login.hide();
-					gbody.hide();
-					infoelem.hide();
-					leaderboard.hide();
 					stage.clear();
 					break;
 			}
@@ -729,7 +757,9 @@ function Actor(type, x, y, w, h, name, sid, gid) {
 		this.face = eyes[Math.floor(Math.random() * eyes.length)] +
 			mouths[Math.floor(Math.random() * mouths.length)];
 		dom.text(this.face);
-		dom.append($("<p>", {text: this.name}));
+		if (this.type == "friend") {
+			dom.append($("<p>", {text: this.name}));
+		}
 	}
 	this.move = function (dx, dy) {
 		this.x += dx;

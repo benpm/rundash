@@ -9,7 +9,7 @@ def build_level(type_, grid = 10):
 
 class Level(object):
     GRID = 10
-    def __init__(self, type_, grid = 10, maxh = 300, maxv = 200):
+    def __init__(self, type_, grid = 10, maxh = 300, maxv = 180):
         self.GRID = grid
         self.budget = 20
         self.maxh = maxh / grid

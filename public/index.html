@@ -13,15 +13,16 @@
 
 	<!-- Game UI -->
 	<div id="msg">Wrong!</div>
+	<p id="title">Rundash!</p>
+	<p id="login-msg">_ games<br>_ online</p>
 	<div id="login" style="display: none;">
 		<form onsubmit="var val = $(this).find('input').val(); send(msg.login, val);" action="javascript:void(0);">
 			<input type="text" name="firstname" placeholder="nickname" autocomplete="off"><br>
-			<button onclick="$(this).parent().find('input').val('')" name="clear" pos="left" type="button"></button><br>
 			<button name="submit" pos="right" type="submit"></button>
 		</form>
 		<div class="player"></div>
 	</div>
-	<div class="leaderboard scroll" style="display: none;">
+	<div class="leaderboard" style="display: none;">
 		<p id="placement"></p>
 		<table>
 			<tbody>
@@ -37,10 +38,13 @@
 
 	<div class="loading">
 		<img src="img/loading.svg">
-		<p id="linfo">Waiting for players...</p>
+		<p id="linfo"></p>
 	</div>
 	<img src="img/ex.svg" class="loading disconnected" style="display: none;">
 	<p style="color:#7A9E9F" id="i"></p>
+
+	<div id="sml-leaderboard" style="display: none;">
+	</div>
 	
 	<div id="game" style="display: none;">
 
