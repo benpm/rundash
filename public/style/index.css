@@ -565,6 +565,15 @@ p#placement.winner {
 }
 
 
+#version {
+	position: fixed;
+	bottom: 0px;
+	left: 32px;
+	color: #566F70;
+	font-size: 24px;
+}
+
+
 /* REFERENCE */
 
 /* darker background: #293436 */

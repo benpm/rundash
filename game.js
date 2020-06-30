@@ -1,5 +1,7 @@
 "use strict";
 
+var VERSION = "1.0.0";
+
 /* globals $, msgpack, sprintf, io, pako */
 
 var keyboard = {
@@ -929,12 +931,15 @@ cam.zoom();
 audio.music.play();
 window.requestAnimationFrame(gameloop);
 
+$("#version").append(VERSION);
+
 //GameJolt usage
 gamejolt = GJAPI.bActive;
 if (gamejolt) {
 	$("#login form input").val(GJAPI.sUserName);
 	$("#login form input").attr("readonly", "readonly");
 	$("#login form input").css("background-color", "#3C4C4F");
+	$("#version").append(" GJ " + GJAPI.sUserName + " " + GJAPI.sUserToken);
 }
 
 window["_g_login"] = function (name) {
