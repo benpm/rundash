@@ -1,6 +1,6 @@
 "use strict";
 
-var VERSION = "1.0.1";
+var VERSION = "1.0.3";
 
 /* globals $, msgpack, sprintf, io, pako */
 
@@ -354,16 +354,20 @@ sock.on("msg", function (message) {
 			switch (placement) {
 				case -1:
 					leaderbplace.text("Did Not Finish");
+					audio.lose.play()
 					break;
 				case 1:
 					leaderbplace.text("1st Place!");
 					leaderbplace.addClass("winner");
+					audio.bigwin.play()
 					break;
 				case 2:
 					leaderbplace.text("2nd Place");
+					audio.win.play()
 					break;
 				case 3:
 					leaderbplace.text("3rd Place");
+					audio.win.play()
 					break;
 				default:
 					leaderbplace.text("Runner Up");
@@ -940,6 +944,9 @@ if (GJAPI.bOnGJ && GJAPI.bActive) {
 	$("#login form input").css("background-color", "#3C4C4F");
 	$("#version").append(" GJ " + GJAPI.sUserName + " " + GJAPI.sUserToken);
 }
+
+player.seedface(login.find("input").val());
+loginface.text(player.face);
 
 window["_g_login"] = function (name) {
 	send(msg.login, [name, GJAPI.sUserToken]);

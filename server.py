@@ -6,6 +6,7 @@ import time
 from enum import IntEnum as enum
 import flask
 import flask_socketio as io
+from flask_cors import CORS
 import msgpack
 import gzip
 import json
@@ -56,13 +57,14 @@ def get_next_game_time():
 
 # Setup server app
 app = flask.Flask(__name__, static_url_path="/public")
+cors = CORS(app)
 
 # Setup websocket app
 players = {}
 games = []
 waitqueue = []
 maxgames = 10
-sock = io.SocketIO(app)
+sock = io.SocketIO(app, cors_allowed_origins="*")
 
 # Setup GameJolt stuff
 gj = None
@@ -307,11 +309,27 @@ def recieve(message):
         nickname = info[0]
         player.token = info[1]
 
-        # Verify nickname
-        if len(nickname) < 3 or len(nickname) > 8:
+        # Verify user not already logged in through GameJolt, and verify them
+        if player.token:
+            for other in players:
+                if other.name == nickname and other.token == player.token:
+                    send(player.sid, msg.login, "You can't log in twice!")
+                    nickname = ""
+                    break
+            else:
+                gj.username = nickname
+                gj.user_token = player.token
+                if not gj.authenticateUser():
+                    send(player.sid, msg.login, "Could not authenticate your user!")
+                    nickname = ""
+
+        # Verify nickname length
+        if (len(nickname) < 3 or len(nickname) > 8) and not player.token:
             send(player.sid, msg.login,
                  "Name must be between 3 and 8 characters long!")
             nickname = ""
+        
+        # Verify no weird characters
         for char in nickname:
             if char not in string.ascii_letters and char not in string.digits:
                 send(player.sid, msg.login, "Name cannot contain '%s'!" % char)
@@ -356,7 +374,7 @@ def connect():
         "vspeed": VSPEED,
         "gravity": GRAVITY,
         "drag": DRAG
-        })
+    })
     send("lobby", msg.lobbyinfo, f"{len(games)} games;{len(players)} online")
 
 # Websocket disconnect

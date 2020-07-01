@@ -69,6 +69,15 @@
 	}
 }
 
+@keyframes pulse {
+	from {
+		transform: scale(0.9, 0.9) rotate(4deg);
+	}
+	to {
+		transform: scale(1.1, 1.1) rotate(-4deg);
+	}
+}
+
 
 @keyframes dropdown {
 	0% {
@@ -390,6 +399,7 @@ div.goal {
 	width: 8vmax;
 	height: 8vmax;
 	color: #3C4C4F;
+	animation: pulse 2s ease-in-out alternate infinite;
 }
 .landscape #login form button {
 	width: calc(8vmax + 8vmin);

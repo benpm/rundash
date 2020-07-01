@@ -1,6 +1,8 @@
 ![](media/banner.png)
 
 # Rundash
+*1.0.3*
+
 A casual, online multiplayer racing platformer! The graphics are all HTML/CSS, no canvas needed! Networking is done with websockets. Server is written in Python 3, client in plain ol' JavaScript.
 
 ## Running a Server
