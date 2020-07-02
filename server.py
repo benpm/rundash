@@ -311,8 +311,8 @@ def recieve(message):
 
         # Verify user not already logged in through GameJolt, and verify them
         if player.token:
-            for other in players:
-                if other.name == nickname and other.token == player.token:
+            for other in players.values():
+                if other.sid != player.sid and other.name == nickname and other.token == player.token:
                     send(player.sid, msg.login, "You can't log in twice!")
                     nickname = ""
                     break
@@ -322,19 +322,19 @@ def recieve(message):
                 if not gj.authenticateUser():
                     send(player.sid, msg.login, "Could not authenticate your user!")
                     nickname = ""
-
-        # Verify nickname length
-        if (len(nickname) < 3 or len(nickname) > 8) and not player.token:
-            send(player.sid, msg.login,
-                 "Name must be between 3 and 8 characters long!")
-            nickname = ""
-        
-        # Verify no weird characters
-        for char in nickname:
-            if char not in string.ascii_letters and char not in string.digits:
-                send(player.sid, msg.login, "Name cannot contain '%s'!" % char)
+        else:
+            # Verify nickname length
+            if (len(nickname) < 3 or len(nickname) > 8):
+                send(player.sid, msg.login,
+                    "Name must be between 3 and 8 characters long!")
                 nickname = ""
-                break
+            
+            # Verify no weird characters
+            for char in nickname:
+                if char not in string.ascii_letters and char not in string.digits:
+                    send(player.sid, msg.login, "Name cannot contain '%s'!" % char)
+                    nickname = ""
+                    break
 
         # If no issue, add to waitqueue
         if nickname:
