@@ -181,7 +181,8 @@ $(document).on("touchmove", function () {
 });
 
 var AUTO_LANDSCAPE = false;
-var address = GJAPI.bOnGJ ? "35.247.123.60:8888" : location.href;
+var address = location.href.search("localhost") == -1 ? "52.9.158.129:8080" : location.href;
+console.log("connecting to " + address);
 var sock = io.connect(address);
 var sp = sprintf;
 var body = $(document.body);
